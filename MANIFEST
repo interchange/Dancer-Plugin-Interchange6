@@ -1,0 +1,15 @@
+CHANGES
+lib/Dancer/Plugin/Interchange6.pm
+lib/Dancer/Plugin/Interchange6/Cart/DBIC.pm
+lib/Dancer/Plugin/Interchange6/Routes.pm
+lib/Dancer/Plugin/Interchange6/Routes/Cart.pm
+lib/Dancer/Plugin/Interchange6/Routes/Checkout.pm
+Makefile.PL
+MANIFEST			This list of files
+MANIFEST.SKIP
+README
+t/00-load.t
+t/cart.t
+t/manifest.t
+t/pod-coverage.t
+t/pod.t
