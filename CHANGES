@@ -1,5 +1,13 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.002 Sun Dec  1 17:15:10 2013 CET
+
+    [BUG FIXES]
+
+    * Add missing code for loading cart.
+    * Fix capturing of return value for cart add.
+    * Adjust code to retrieve navigation information to DBIC.
+
 0.001 Sat Nov 30 17:41:34 2013 CET
 
     * Initial release.

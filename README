@@ -2,7 +2,7 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.001
+    Version 0.002
 
 HOOKS
     This plugin installs the following hooks:
