@@ -152,20 +152,22 @@ sub _setup_routes {
         }
 
         # first check for navigation item
-        my $result = shop_navigation->search(where => {uri => $path});
+        my $navigation_result = shop_navigation->search({uri => $path});
 
-        if (@$result > 1) {
+        if ($navigation_result > 1) {
             die "Ambigious result on path $path.";
         }
 
-        if (@$result == 1) {
+        if ($navigation_result == 1) {
             # navigation item found
+            my $nav = $navigation_result->[0];
 
-            my $nav = $result->[0];
+            # retrieve related products
+            my $products = $nav->search_related({active => 1});
 
-            my $pkeys = shop_navigation($result->[0]->{code})->assigned(shop_product);
-
-            my $products = [grep {! $_->{inactive}} map {shop_product($_)->dump} @$pkeys];
+            while (my $rec = $products->next) {
+                debug "Related product for ", $nav->name, ": ", $rec->sku;
+            }
 
             my $tokens = {navigation => $nav,
                           products => $products,
