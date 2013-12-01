@@ -41,7 +41,7 @@ sub cart_route {
                     $cart_item = cart($cart_name)->add($cart_input);
                 }
                 else {
-                    cart->add($cart_input);
+                    $cart_item = cart->add($cart_input);
                 }
 
                 unless ($cart_item) {
