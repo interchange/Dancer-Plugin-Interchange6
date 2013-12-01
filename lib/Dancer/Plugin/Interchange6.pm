@@ -6,6 +6,7 @@ use warnings;
 use Dancer qw(:syntax !before !after);
 use Dancer::Plugin;
 use Dancer::Plugin::DBIC;
+use Dancer::Plugin::Auth::Extensible;
 
 use Interchange6::Class;
 use Interchange6::Cart;
@@ -147,7 +148,7 @@ register shop_product_class => sub {
 
 register cart => sub {
     my $name = 'main';
-    my $cart;
+    my ($user_ref, $cart);
 
     if (@_ == 1) {
         $name = $_[0];
@@ -157,6 +158,14 @@ register cart => sub {
                                        name => $name,
                                        session_id => session->id,
                                        run_hooks => sub {execute_hook(@_)});
+
+    if ($user_ref = logged_in_user) {
+        $cart->load(users_id => $user_ref->users_id,
+                    session_id => session->id);
+    }
+    else {
+        $cart->load(session_id => session->id);
+    }
 
     return $cart;
 };

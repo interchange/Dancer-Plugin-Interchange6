@@ -49,28 +49,36 @@ Loads cart from database.
 
 sub load {
     my ($self, %args) = @_;
-    my ($uid, $name, $code);
+    my ($uid, $name, $result, $code);
 
     # check whether user is authenticated or not
-    $uid = $args{uid} || 0;
-    $self->{uid} = $uid;
+    $uid = $args{users_id};
 
     if ($uid) {
+        $self->{users_id} = $args{users_id};
+
         # determine cart code (from uid)
-        $code = $self->{sqla}->select_field(table => 'carts', field => 'code', where => {name => $self->name, uid => $uid});
+        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.users_id' => $args{users_id}});
+
+        if ($result->count > 0) {
+            $code = $result->next->id;
+        }
     }
     elsif ($args{session_id}) {
         # determine cart code (from session_id)
-        $code = $self->{sqla}->select_field(table => 'carts', field => 'code', where => {name => $self->name, uid => 0, session_id => $args{session_id}});
+        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.sessions_id' => $args{session_id}});
+        if ($result->count > 0) {
+            $code = $result->next->id;
+        }
     }
-    
+
     unless ($code) {
-	$self->{id} = 0;
-	return;
+        $self->{id} = 0;
+        return;
     }
     $self->{id} = $code;
 
-    $self->_load_cart;    
+    $self->_load_cart($result);
 }
 
 =head2 id
@@ -124,28 +132,34 @@ sub _create_cart {
 
     my $rs = resultset('Cart')->create(\%cart);
     
-    Dancer::Logger::debug("New cart: ", $rs->id);
+    Dancer::Logger::debug("New cart: ", $rs->id, " => ", \%cart);
 
     $self->{id} = $rs->id;
 }
 
 # loads cart from database
 sub _load_cart {
-    my $self = shift;
-
-    # build query for item retrieval
-    my %specs = (fields => $self->{settings}->{fields} || 
-                 [qw/products.sku products.name products.price cart_products.quantity/],
-                 join => $self->{settings}->{join} ||
-                 [qw/carts code=cart cart_products sku=sku products/],
-                 where => {'carts.code' => $self->{id},
-                          '-not_bool' => 'inactive',
-                          });
+    my ($self, $result) = @_;
+    my ($record, @items);
 
     # retrieve items from database
-    my $result = $self->{sqla}->select(%specs);
+    my $related = $result->search_related('cart_products',
+                                          {},
+                                          {
+                                           join => 'sku',
+                                           prefetch => 'sku',
+                                          })
+        ;
 
-    $self->seed($result);
+    while (my $record = $related->next) {
+        push @items, {sku => $record->sku->sku,
+                      name => $record->sku->name,
+                      price => $record->sku->price,
+                      quantity => $record->quantity,
+                      };
+    }
+
+    $self->seed(\@items);
 }
 
 sub _find_and_update {
