@@ -21,6 +21,7 @@ WriteMakefile(
                   'Interchange6' => 0.001,
                   'Dancer'     => 1.3098,
                   'Dancer::Plugin::DBIC' => 0,
+                  'Dancer::Plugin::Auth::Extensible' => 0,
                   'Business::OnlinePayment' => 3.02,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
