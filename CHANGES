@@ -1,5 +1,19 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.003 Sun Dec  8 12:28:18 2013 CET
+
+    [API CHANGES]
+
+    * Use {product => $product} instead of just $product as tokens for product route.
+
+    [BUG FIXES]
+
+    * Fix search for related products for navigation routes.
+
+    [DOCUMENTATION]
+
+    * Add documentation about shop_setup_routes to main POD.
+
 0.002 Sun Dec  1 17:15:10 2013 CET
 
     [BUG FIXES]

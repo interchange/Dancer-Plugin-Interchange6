@@ -2,7 +2,38 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.002
+    Version 0.003
+
+ROUTES
+    You can use the Dancer::Plugin::Interchange6::Routes plugin bundled with
+    this plugin to setup standard routes for:
+
+    product listing
+    product display
+    cart display
+    checkout form
+
+    To enable these routes, you put the `shop_setup_routes' keyword at the
+    end of your main module:
+
+        package MyShop;
+
+        use Dancer ':syntax';
+        use Dancer::Plugin::Interchange6;
+        use Dancer::Plugin::Interchange6::Routes;
+
+        get '/shop' => sub {
+            ...
+        };
+
+        ...
+
+        shop_setup_routes;
+
+        true;
+
+    Please refer to Dancer::Plugin::Interchange6::Routes for configuration
+    options and further information.
 
 HOOKS
     This plugin installs the following hooks:
