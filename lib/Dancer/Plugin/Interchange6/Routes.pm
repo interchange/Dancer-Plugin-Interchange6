@@ -162,13 +162,14 @@ sub _setup_routes {
 
         if ($navigation_result == 1) {
             # navigation item found
-            my $nav = $navigation_result->[0];
-
+            my $nav = $navigation_result->next;
             # retrieve related products
-            my $products = $nav->search_related({active => 1});
+            my $nav_products = $nav->search_related('navigation_products')->search_related('sku');
 
-            while (my $rec = $products->next) {
-                debug "Related product for ", $nav->name, ": ", $rec->sku;
+            my $products;
+
+            while (my $rec = $nav_products->next) {
+                push @$products, $rec;
             }
 
             my $tokens = {navigation => $nav,
