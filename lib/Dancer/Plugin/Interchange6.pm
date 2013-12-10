@@ -181,6 +181,10 @@ register shop_product => sub {
     _shop_resultset('Product', @_);
 };
 
+register shop_country => sub {
+    _shop_resultset('Country', @_);
+};
+
 register cart => sub {
     my $name = 'main';
     my ($user_ref, $cart);
