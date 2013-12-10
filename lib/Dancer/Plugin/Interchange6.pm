@@ -181,10 +181,6 @@ register shop_product => sub {
     _shop_resultset('Product', @_);
 };
 
-register shop_product_class => sub {
-    _shop_resultset('ProductClass', @_);
-};
-
 register cart => sub {
     my $name = 'main';
     my ($user_ref, $cart);
