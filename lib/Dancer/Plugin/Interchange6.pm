@@ -173,6 +173,10 @@ register_hook(qw/before_cart_add_validate
                  before_cart_clear after_cart_clear
                 /);
 
+register shop_schema => sub {
+    _shop_schema();
+};
+
 register shop_navigation => sub {
     _shop_resultset('Navigation', @_);
 };
@@ -207,6 +211,10 @@ register cart => sub {
     }
 
     return $cart;
+};
+
+sub _shop_schema {
+    return schema;
 };
 
 sub _shop_resultset {
