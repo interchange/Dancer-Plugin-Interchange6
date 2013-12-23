@@ -247,7 +247,7 @@ sub _after_cart_rename {
 	return;
     }
 
-    resultset('Cart')->find($self->id)->update({name => $args[2]});
+    $self->{sqla}->resultset('Cart')->find($self->id)->update({name => $args[2]});
 }
 
 sub _after_cart_clear {
