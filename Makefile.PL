@@ -14,6 +14,7 @@ WriteMakefile(
     BUILD_REQUIRES      => {
                             'Test::More' => 0,
                             'DBICx::TestDatabase' => 0,
+                            'Test::Database' => 0,
                       },
     PREREQ_PM => {
                   'YAML'       => 0,
