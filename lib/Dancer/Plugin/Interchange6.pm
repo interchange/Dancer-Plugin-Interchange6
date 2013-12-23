@@ -177,6 +177,14 @@ register shop_schema => sub {
     _shop_schema();
 };
 
+register shop_address => sub {
+    _shop_resultset('Address', @_);
+};
+
+register shop_country => sub {
+    _shop_resultset('Country', @_);
+};
+
 register shop_navigation => sub {
     _shop_resultset('Navigation', @_);
 };
@@ -185,8 +193,8 @@ register shop_product => sub {
     _shop_resultset('Product', @_);
 };
 
-register shop_country => sub {
-    _shop_resultset('Country', @_);
+register shop_user => sub {
+    _shop_resultset('User', @_);
 };
 
 register cart => sub {
