@@ -124,6 +124,7 @@ sub _create_cart {
     %cart = (name => $self->name,
              created => $self->created,
              last_modified => $self->last_modified,
+             sessions_id => $self->{session_id},
              );
 
     if (defined $self->{users_id}) {
