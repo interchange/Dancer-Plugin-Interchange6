@@ -2,6 +2,7 @@ CHANGES
 lib/Dancer/Plugin/Interchange6.pm
 lib/Dancer/Plugin/Interchange6/Cart/DBIC.pm
 lib/Dancer/Plugin/Interchange6/Routes.pm
+lib/Dancer/Plugin/Interchange6/Routes/Account.pm
 lib/Dancer/Plugin/Interchange6/Routes/Cart.pm
 lib/Dancer/Plugin/Interchange6/Routes/Checkout.pm
 Makefile.PL

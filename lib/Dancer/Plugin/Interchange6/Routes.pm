@@ -3,6 +3,7 @@ package Dancer::Plugin::Interchange6::Routes;
 use Dancer ':syntax';
 use Dancer::Plugin;
 use Dancer::Plugin::Interchange6;
+use Dancer::Plugin::Interchange6::Routes::Account;
 use Dancer::Plugin::Interchange6::Routes::Cart;
 use Dancer::Plugin::Interchange6::Routes::Checkout;
 
@@ -41,6 +42,14 @@ The template for each route type can be configured:
 
     plugins:
       Interchange6::Routes:
+        account:
+          login:
+            template: login
+            uri: login
+            success_uri:
+          logout:
+            template: logout
+            uri: logout
         cart:
           template: cart
         checkout:
@@ -84,16 +93,38 @@ register shop_setup_routes => sub {
 register_hook (qw/before_product_display before_navigation_display/);
 register_plugin;
 
-our %route_defaults = (cart => {template => 'cart'},
+our %route_defaults = (
+                       account => {login => {template => 'login',
+                                             uri => 'login',
+                                             success_uri => '',
+                                            },
+                                   logout => {template => 'logout',
+                                              uri => 'logout',
+                                             },
+                                  },
+                       cart => {template => 'cart'},
                        checkout => {template => 'checkout'},
                        navigation => {template => 'listing'},
                        product => {template => 'product'});
 
 sub _setup_routes {
+    my $sub;
     my $plugin_config = plugin_setting;
 
     # update settings with defaults
     my $routes_config = _config_routes($plugin_config, \%route_defaults);
+
+    # account routes
+    my $account_routes = Dancer::Plugin::Interchange6::Routes::Account::account_routes($routes_config);
+
+    get '/' . $routes_config->{account}->{login}->{uri}
+        => $account_routes->{login}->{get};
+
+    post '/' . $routes_config->{account}->{login}->{uri}
+        => $account_routes->{login}->{post};
+
+    any ['get', 'post'] => '/' . $routes_config->{account}->{logout}->{uri}
+        => $account_routes->{logout}->{any};
 
     # routes for cart
     my $cart_sub = Dancer::Plugin::Interchange6::Routes::Cart::cart_route($routes_config);
