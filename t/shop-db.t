@@ -26,7 +26,13 @@ for my $testdb (@all_handles) {
 
 my $tests = 5 * scalar(@handles);
 
-plan tests => $tests;
+if ($tests) {
+    # determine number of tests
+    plan tests => $tests;
+}
+else {
+    plan skip_all => 'No test database handles available';
+}
 
 # prepare records for populating the database
 my $pop_countries = Interchange6::Schema::Populate::CountryLocale->new->records;
