@@ -144,7 +144,7 @@ sub _load_cart {
     my ($record, @items);
 
     # retrieve items from database
-    my $related = $result->search_related('cart_products',
+    my $related = $result->search_related('CartProduct',
                                           {},
                                           {
                                            join => 'sku',
@@ -259,7 +259,7 @@ sub _after_cart_clear {
     }
 
     # delete all products from this cart
-    my $rs = $self->{sqla}->resultset('Cart')->search({'cart_products.carts_id' => $self->{id}}, {join => 'cart_products'})->delete_all;
+    my $rs = $self->{sqla}->resultset('Cart')->search({'CartProduct.carts_id' => $self->{id}}, {join => 'CartProduct'})->delete_all;
 }
 
 =head1 AUTHOR
