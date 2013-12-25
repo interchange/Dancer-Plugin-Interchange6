@@ -195,7 +195,7 @@ sub _setup_routes {
             # navigation item found
             my $nav = $navigation_result->next;
             # retrieve related products
-            my $nav_products = $nav->search_related('NavigationProduct')->search_related('sku');
+            my $nav_products = $nav->search_related('NavigationProduct')->search_related('Product');
 
             my $products;
 
