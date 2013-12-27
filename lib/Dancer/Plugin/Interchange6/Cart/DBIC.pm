@@ -147,15 +147,15 @@ sub _load_cart {
     my $related = $result->search_related('CartProduct',
                                           {},
                                           {
-                                           join => 'sku',
-                                           prefetch => 'sku',
+                                           join => 'Product',
+                                           prefetch => 'Product',
                                           })
         ;
 
     while (my $record = $related->next) {
-        push @items, {sku => $record->sku->sku,
-                      name => $record->sku->name,
-                      price => $record->sku->price,
+        push @items, {sku => $record->Product->sku,
+                      name => $record->Product->name,
+                      price => $record->Product->price,
                       quantity => $record->quantity,
                       };
     }
