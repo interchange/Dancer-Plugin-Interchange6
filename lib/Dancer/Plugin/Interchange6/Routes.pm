@@ -194,9 +194,10 @@ sub _setup_routes {
         if ($product) {
             if ($product->active) {
                 # flypage
-                execute_hook('before_product_display', $product);
-                return template $routes_config->{product}->{template},
-                    {product => $product};
+                my $tokens = {product => $product};
+
+                execute_hook('before_product_display', $tokens);
+                return template $routes_config->{product}->{template}, $tokens;
             }
             else {
                 # discontinued
