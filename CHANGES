@@ -1,5 +1,22 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.005 Fri Dec 27 13:48:36 2013 CET
+
+    [ENHANCEMENTS]
+
+    * Add login and logout routes.
+    * Add support for online payment transactions through shop_charge keyword.
+    * Add shop_schema, shop_address and shop_user keyword.
+    * Save session id into the cart at creation time.
+
+    [BUG FIXES]
+
+    * Access cart resultset via $self->{sqla} to avoid odd test failure on MSWin32-x86-multi-thread.
+
+    [TESTS]
+
+    * Add tests with Test::Database.
+
 0.004 Tue Dec 17 13:56:50 2013 CET
 
     [API CHANGES]
