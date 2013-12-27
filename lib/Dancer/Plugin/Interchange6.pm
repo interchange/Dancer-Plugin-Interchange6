@@ -200,7 +200,7 @@ register shop_user => sub {
 
 register shop_charge => sub {
 	my (%args) = @_;
-	my ($bop_object, $payment_settings, $provider, $provider_settings);
+	my ($schema, $bop_object, $payment_settings, $provider, $provider_settings);
 
 	$payment_settings = plugin_setting->{payment};
 
@@ -224,6 +224,15 @@ register shop_charge => sub {
 
     # call charge method
     debug "Charging with the following parameters: ", \%args;
+
+    # log request
+    $schema = _shop_schema();
+    $schema->resultset('PaymentOrder')->create({payment_mode => $provider,
+                                                status => 'request',
+                                                sessions_id => session->id,
+                                                payment_action => 'charge',
+                                                amount => $args{amount},
+                                               });
 
     $bop_object->charge(%args);
 
