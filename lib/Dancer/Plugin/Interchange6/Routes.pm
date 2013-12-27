@@ -25,6 +25,14 @@ Route for displaying and updating the cart.
 
 Route for the checkout process.
 
+=item login (C</login>)
+
+Login route.
+
+=item logout (C</logout>)
+
+Logout route.
+
 =item navigation
 
 Route for displaying navigation pages, for example
@@ -82,7 +90,20 @@ is the value of the C<product> key.
 The hook sub receives the navigation data as hash reference.
 The list of products is the value of the C<products> key.
 
+=item before_login_display
+
 =back
+
+=head3 EXAMPLES
+
+Disable parts of layout on the login view:
+
+    hook 'before_login_display' => sub {
+        my $tokens = shift;
+
+        $tokens->{layout_noleft} = 1;
+        $tokens->{layout_noright} = 1;
+    };
 
 =cut
 
