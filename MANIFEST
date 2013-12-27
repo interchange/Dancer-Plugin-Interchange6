@@ -1,5 +1,6 @@
 CHANGES
 lib/Dancer/Plugin/Interchange6.pm
+lib/Dancer/Plugin/Interchange6/Business/OnlinePayment.pm
 lib/Dancer/Plugin/Interchange6/Cart/DBIC.pm
 lib/Dancer/Plugin/Interchange6/Routes.pm
 lib/Dancer/Plugin/Interchange6/Routes/Account.pm

@@ -10,6 +10,7 @@ use Dancer::Plugin::Auth::Extensible;
 
 use Interchange6::Class;
 use Interchange6::Cart;
+use Dancer::Plugin::Interchange6::Business::OnlinePayment;
 
 =head1 NAME
 
@@ -195,6 +196,38 @@ register shop_product => sub {
 
 register shop_user => sub {
     _shop_resultset('User', @_);
+};
+
+register shop_charge => sub {
+	my (%args) = @_;
+	my ($bop_object, $payment_settings, $provider, $provider_settings);
+
+	$payment_settings = plugin_setting->{payment};
+
+    # determine payment provider
+    if (exists $args{provider} && $args{provider}) {
+        $provider = $args{provider};
+    }
+    else {
+        $provider = $payment_settings->{default_provider};
+    }
+
+    if (exists $payment_settings->{providers}->{$provider}) {
+        $provider_settings = $payment_settings->{providers}->{$provider};
+    }
+    else {
+        die "Settings for provider $provider missing.";
+    }
+
+    # create BOP object wrapper with provider settings
+	$bop_object = Dancer::Plugin::Interchange6::Business::OnlinePayment->new($provider, %$provider_settings);
+
+    # call charge method
+    debug "Charging with the following parameters: ", \%args;
+
+    $bop_object->charge(%args);
+
+	return $bop_object;
 };
 
 register cart => sub {
