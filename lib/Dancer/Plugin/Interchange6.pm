@@ -24,6 +24,18 @@ Version 0.005
 
 our $VERSION = '0.005';
 
+=head1 REQUIREMENTS
+
+All Interchange6 Dancer applications need to use the L<Dancer::Session::DBIC>
+engine:
+
+    session: DBIC
+
+The easiest way to configure this is in your main module, just after all
+the C<use> statements:
+
+   set session_options => {schema => schema};
+
 =head1 ROUTES
 
 You can use the L<Dancer::Plugin::Interchange6::Routes> plugin bundled with this
