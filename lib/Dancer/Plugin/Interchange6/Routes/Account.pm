@@ -34,6 +34,8 @@ sub account_routes {
     my %routes;
 
     $routes{login}->{get} = sub {
+        return redirect '/' if logged_in_user;
+
         my %values;
 
         # call before_login_display route so template tokens
