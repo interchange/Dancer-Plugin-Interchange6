@@ -24,7 +24,7 @@ for my $testdb (@all_handles) {
     push @handles, $testdb;
 }
 
-my $tests = 5 * scalar(@handles);
+my $tests = 8 * scalar(@handles);
 
 if ($tests) {
     # determine number of tests
@@ -46,6 +46,8 @@ for my $testdb (@handles) {
     my @connection_info = $testdb->connection_info;
     my $schema = Interchange6::Schema->connect($testdb->connection_info);
 
+    my $ret;
+
     isa_ok($schema, 'Interchange6::Schema');
 
     set plugins => {DBIC => {default => {dsn => $connection_info[0],
@@ -57,21 +59,32 @@ for my $testdb (@handles) {
 
     my $shop_schema = shop_schema;
 
-    isa_ok($schema, 'Interchange6::Schema');
-
     # deploy our schema
     $schema->deploy({add_drop_table => 1});
+
+    # add user
+    my %user_data = (username => 'nevairbe@nitesi.de',
+                     email => 'nevairbe@nitesi.de',
+                     password => 'nevairbe');
+
+    my $user = $schema->resultset('User')->create(\%user_data);
+
+    isa_ok($user, 'Interchange6::Schema::Result::User');
 
     # populate country table
     $schema->populate('Country', $pop_countries);
 
     # check PL country
-    my $ret = $schema->resultset('Country')->find('PL');
+    $ret = shop_country->find('PL');
 
     isa_ok($ret, 'Interchange6::Schema::Result::Country');
     ok($ret->name eq 'Poland');
+    ok($ret->show_states == 0);
 
-    my $rs = shop_country->find('PL');
+    # check US country
+    $ret = shop_country->find('US');
 
-    isa_ok($rs, 'Interchange6::Schema::Result::Country');
+    isa_ok($ret, 'Interchange6::Schema::Result::Country');
+    ok($ret->name eq 'United States');
+    ok($ret->show_states == 1);
 }
