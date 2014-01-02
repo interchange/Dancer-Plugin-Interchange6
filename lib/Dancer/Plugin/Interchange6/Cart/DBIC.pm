@@ -39,6 +39,7 @@ sub init {
     hook 'after_cart_remove' => sub {$self->_after_cart_remove(@_)};
     hook 'after_cart_rename' => sub {$self->_after_cart_rename(@_)};
     hook 'after_cart_clear' => sub {$self->_after_cart_clear(@_)};
+    hook 'after_cart_set_users_id' => sub {$self->_after_cart_set_users_id(@_)};
 }
 
 =head2 load
@@ -260,6 +261,22 @@ sub _after_cart_clear {
 
     # delete all products from this cart
     my $rs = $self->{sqla}->resultset('Cart')->search({'CartProduct.carts_id' => $self->{id}}, {join => 'CartProduct'})->delete_all;
+}
+
+sub _after_cart_set_users_id {
+    my ($self, @args) = @_;
+
+    unless ($self eq $args[0]) {
+        # not our cart
+        return;
+    }
+
+    # change users_id
+    my $data = $args[1];
+
+    Dancer::Logger::debug("Change users_id of $self->{id} to: ", $data);
+
+    $self->{sqla}->resultset('Cart')->find($self->{id})->update($data);
 }
 
 =head1 AUTHOR
