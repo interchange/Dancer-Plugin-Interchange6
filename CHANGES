@@ -1,5 +1,30 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.006 Thu Jan  2 17:20:57 2014 CET
+
+    [ENHANCEMENTS]
+
+    * Add shop_cart keyword as alias for cart keyword.
+    * Add hooks before_cart_set_users_id,after_cart_set_users_id,
+      before_cart_set_sessions_id and after_cart_set_sessions_id.
+    * Update users_id resp. sessions_id in cart on login/logout.
+
+    [BUG FIXES]
+
+    * Pass same tokens to before_product_display hook and product template.
+    * Redirect to application root from login get route when user is already
+      logged in.
+
+    [DOCUMENTATION]
+
+    * Add section about Dancer::Session::DBIC requirement.
+
+    [TESTS]
+
+    * Add tests for creating an user and show_states field for country
+      result class.
+    * Prefer to use plugin keywords.
+
 0.005 Fri Dec 27 13:48:36 2013 CET
 
     [ENHANCEMENTS]

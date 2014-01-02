@@ -2,7 +2,18 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.005
+    Version 0.006
+
+REQUIREMENTS
+    All Interchange6 Dancer applications need to use the
+    Dancer::Session::DBIC engine:
+
+        session: DBIC
+
+    The easiest way to configure this is in your main module, just after all
+    the `use' statements:
+
+       set session_options => {schema => schema};
 
 ROUTES
     You can use the Dancer::Plugin::Interchange6::Routes plugin bundled with
@@ -95,6 +106,18 @@ HOOKS
 
     after_cart_rename
         Triggered after cart is renamed.
+
+    before_cart_set_users_id
+        Triggered before users_id is set for the cart.
+
+    after_cart_set_users_id
+        Triggered after users_id is set for the cart.
+
+    before_cart_set_sessions_id
+        Triggered before sessions_id is set for the cart.
+
+    after_cart_set_sessions_id
+        Triggered after sessions_id is set for the cart.
 
 ACKNOWLEDGEMENTS
     The Dancer developers and community for their great application
