@@ -173,6 +173,22 @@ Triggered before cart is renamed.
 
 Triggered after cart is renamed.
 
+=item before_cart_set_users_id
+
+Triggered before users_id is set for the cart.
+
+=item after_cart_set_users_id
+
+Triggered after users_id is set for the cart.
+
+=item before_cart_set_sessions_id
+
+Triggered before sessions_id is set for the cart.
+
+=item after_cart_set_sessions_id
+
+Triggered after sessions_id is set for the cart.
+
 =back
 
 =cut
@@ -184,6 +200,8 @@ register_hook(qw/before_cart_add_validate
                  before_cart_remove after_cart_remove
                  before_cart_rename after_cart_rename
                  before_cart_clear after_cart_clear
+                 before_cart_set_users_id after_cart_set_users_id
+                 before_cart_set_sessions_id after_cart_set_sessions_id
                 /);
 
 register shop_schema => sub {
