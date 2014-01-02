@@ -251,7 +251,10 @@ register shop_charge => sub {
 	return $bop_object;
 };
 
-register cart => sub {
+register cart => \&_shop_cart;
+register shop_cart => \&_shop_cart;
+
+sub _shop_cart {
     my $name = 'main';
     my ($user_ref, $cart);
 
