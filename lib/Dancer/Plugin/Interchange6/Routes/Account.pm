@@ -51,9 +51,12 @@ sub account_routes {
 
         my $user = shop_user->find({ username => params->{username}});
 
-        my ($success, $realm);
+        my ($success, $realm, $current_cart);
 
         if ($user) {
+            # remember current cart object
+            $current_cart = shop_cart;
+
             ($success, $realm) = authenticate_user( params->{username}, params->{password} );
         }
 
@@ -61,6 +64,11 @@ sub account_routes {
             session logged_in_user => $user->username;
             session logged_in_user_id => $user->id;
             session logged_in_user_realm => $realm;
+
+            if (! $current_cart->users_id) {
+                $current_cart->users_id($user->id);
+            }
+
             return redirect '/' . $routes_config->{account}->{login}->{success_uri};
         } else {
             debug "Authentication failed for ", params->{username};
@@ -71,6 +79,7 @@ sub account_routes {
     };
 
     $routes{logout}->{any} = sub {
+        shop_cart->sessions_id(undef);
         session->destroy;
         return redirect '/';
     };
