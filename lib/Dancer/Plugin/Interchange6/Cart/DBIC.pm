@@ -40,6 +40,7 @@ sub init {
     hook 'after_cart_rename' => sub {$self->_after_cart_rename(@_)};
     hook 'after_cart_clear' => sub {$self->_after_cart_clear(@_)};
     hook 'after_cart_set_users_id' => sub {$self->_after_cart_set_users_id(@_)};
+    hook 'after_cart_set_sessions_id' => sub {$self->_after_cart_set_sessions_id(@_)};
 }
 
 =head2 load
@@ -275,6 +276,22 @@ sub _after_cart_set_users_id {
     my $data = $args[1];
 
     Dancer::Logger::debug("Change users_id of $self->{id} to: ", $data);
+
+    $self->{sqla}->resultset('Cart')->find($self->{id})->update($data);
+}
+
+sub _after_cart_set_sessions_id {
+    my ($self, @args) = @_;
+
+    unless ($self eq $args[0]) {
+        # not our cart
+        return;
+    }
+
+    # change sessions_id
+    my $data = $args[1];
+
+    Dancer::Logger::debug("Change sessions_id of $self->{id} to: ", $data);
 
     $self->{sqla}->resultset('Cart')->find($self->{id})->update($data);
 }
