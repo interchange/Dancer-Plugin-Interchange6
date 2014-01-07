@@ -1,3 +1,4 @@
+bin/interchange6-expire-sessions
 CHANGES
 lib/Dancer/Plugin/Interchange6.pm
 lib/Dancer/Plugin/Interchange6/Business/OnlinePayment.pm
