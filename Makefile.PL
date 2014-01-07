@@ -11,6 +11,7 @@ WriteMakefile(
       ? ('LICENSE'=> 'perl')
       : ()),
     PL_FILES            => {},
+    EXE_FILES           => ['bin/interchange6-expire-sessions'],
     BUILD_REQUIRES      => {
                             'Test::More' => 0,
                             'DBICx::TestDatabase' => 0,
