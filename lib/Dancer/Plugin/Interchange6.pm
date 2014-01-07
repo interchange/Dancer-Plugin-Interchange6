@@ -191,6 +191,13 @@ Triggered after sessions_id is set for the cart.
 
 =back
 
+=head1 EXPIRE DBIC SESSIONS
+
+This command expires/manages DBIC sessions and carts.  NOTE: For proper
+functionality please copy/link to Dancer App/bin directory.
+
+    interchange6-expire-sessions
+
 =cut
 
 register_hook(qw/before_cart_add_validate
