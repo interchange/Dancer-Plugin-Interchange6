@@ -119,6 +119,12 @@ HOOKS
     after_cart_set_sessions_id
         Triggered after sessions_id is set for the cart.
 
+EXPIRE DBIC SESSIONS
+    This command expires/manages DBIC sessions and carts.  NOTE: For proper
+    functionality please copy/link to Dancer App/bin directory.
+
+         interchange6-expire-sessions
+
 ACKNOWLEDGEMENTS
     The Dancer developers and community for their great application
     framework and for their quick and competent support.
