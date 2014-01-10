@@ -25,15 +25,29 @@ sub cart_route {
 
     return sub {
         my %values;
-        my ($input, $product, $cart_item, $cart_name, $cart_input);
+        my ($input, $product, $cart_item, $cart_name, $cart_input,
+            $cart_product);
 
         if ($input = param('sku')) {
             if (scalar($input)) {
                 $product = shop_product($input);
 
-                $cart_input = {sku => $product->sku,
-                               name => $product->name,
-                               price => $product->price};
+                # retrieve product attributes for possible variants
+                my $attr_ref = $product->attribute_iterator(hashref => 1);
+                my %user_input;
+
+                for my $name (keys %$attr_ref) {
+                    $user_input{$name} = param($name);
+                }
+
+                unless ($cart_product = $product->find_variant(\%user_input)) {
+                    warning "Variant not found for ", $product->sku;
+                    $values{cart_error} = "Variant not found.";
+                };
+
+                $cart_input = {sku => $cart_product->sku,
+                               name => $cart_product->name,
+                               price => $cart_product->price};
 
                 debug "Cart input: ", $cart_input;
                 if ($cart_name = param('cart')
