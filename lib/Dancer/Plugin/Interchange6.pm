@@ -219,6 +219,10 @@ register shop_address => sub {
     _shop_resultset('Address', @_);
 };
 
+register shop_attribute => sub {
+    _shop_resultset('Attribute', @_);
+};
+
 register shop_country => sub {
     _shop_resultset('Country', @_);
 };
