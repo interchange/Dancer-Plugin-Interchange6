@@ -36,14 +36,23 @@ sub cart_route {
                 my $attr_ref = $product->attribute_iterator(hashref => 1);
                 my %user_input;
 
-                for my $name (keys %$attr_ref) {
-                    $user_input{$name} = param($name);
-                }
+                if (keys %$attr_ref) {
+                    # find variant
+                    for my $name (keys %$attr_ref) {
+                        $user_input{$name} = param($name);
+                    }
 
-                unless ($cart_product = $product->find_variant(\%user_input)) {
-                    warning "Variant not found for ", $product->sku;
-                    $values{cart_error} = "Variant not found.";
-                };
+                    debug "Attributes for $input: ", $attr_ref, ", user input: ", %user_input;
+
+                    unless ($cart_product = $product->find_variant(\%user_input)) {
+                        warning "Variant not found for ", $product->sku;
+                        $values{cart_error} = "Variant not found.";
+                    };
+                }
+                else {
+                    # product without variants
+                    $cart_product = $product;
+                }
 
                 $cart_input = {sku => $cart_product->sku,
                                name => $cart_product->name,
