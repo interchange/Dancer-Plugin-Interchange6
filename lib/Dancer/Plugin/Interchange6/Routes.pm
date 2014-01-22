@@ -197,7 +197,13 @@ sub _setup_routes {
                 my $tokens = {product => $product};
 
                 execute_hook('before_product_display', $tokens);
-                return template $routes_config->{product}->{template}, $tokens;
+
+                my $output = template $routes_config->{product}->{template}, $tokens;
+
+                # temporary way to erase cart errors from missing variants
+                session shop_cart_error => undef;
+
+                return $output;
             }
             else {
                 # discontinued

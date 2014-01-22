@@ -42,11 +42,13 @@ sub cart_route {
                         $user_input{$name} = param($name);
                     }
 
-                    debug "Attributes for $input: ", $attr_ref, ", user input: ", %user_input;
+                    debug "Attributes for $input: ", $attr_ref, ", user input: ", \%user_input;
+                    my %match_info;
 
-                    unless ($cart_product = $product->find_variant(\%user_input)) {
+                    unless ($cart_product = $product->find_variant(\%user_input, \%match_info)) {
                         warning "Variant not found for ", $product->sku;
-                        $values{cart_error} = "Variant not found.";
+                        session shop_cart_error => {message => 'Variant not found.', info => \%match_info};
+                        return redirect $product->uri;
                     };
                 }
                 else {
