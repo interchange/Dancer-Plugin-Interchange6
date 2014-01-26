@@ -158,6 +158,7 @@ sub _load_cart {
         push @items, {sku => $record->Product->sku,
                       name => $record->Product->name,
                       price => $record->Product->price,
+                      uri => $record->Product->uri,
                       quantity => $record->quantity,
                       };
     }
