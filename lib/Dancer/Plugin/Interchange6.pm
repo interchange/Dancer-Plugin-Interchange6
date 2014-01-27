@@ -27,13 +27,12 @@ our $VERSION = '0.006';
 =head1 REQUIREMENTS
 
 All Interchange6 Dancer applications need to use the L<Dancer::Session::DBIC>
-engine:
-
-    session: DBIC
+engine.
 
 The easiest way to configure this is in your main module, just after all
 the C<use> statements:
 
+   set session => 'DBIC';
    set session_options => {schema => schema};
 
 =head1 ROUTES
