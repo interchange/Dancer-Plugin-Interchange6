@@ -11,7 +11,7 @@ interchange6-session-expires - Expire DBIC sessions
 Usage:
 
 If --expire is not set the script will attempt to use
-session_expires value from config.yml.  
+session_expires value from config.yml.
 
   bin/interchange6-session-expires
 
@@ -20,8 +20,8 @@ session_expires value from config.yml.
   bin/interchange6-session-expires --expire='7200'
 
 =head1 DESCRIPTION
- 
-NOTE: This script should be copied to your Dancer App/bin 
+
+NOTE: This script should be copied to your Dancer App/bin
 directory to work correctly.
 
 =cut
