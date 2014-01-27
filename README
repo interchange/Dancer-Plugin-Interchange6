@@ -2,17 +2,16 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.006
+    Version 0.007
 
 REQUIREMENTS
     All Interchange6 Dancer applications need to use the
-    Dancer::Session::DBIC engine:
-
-        session: DBIC
+    Dancer::Session::DBIC engine.
 
     The easiest way to configure this is in your main module, just after all
     the `use' statements:
 
+       set session => 'DBIC';
        set session_options => {schema => schema};
 
 ROUTES
@@ -120,10 +119,10 @@ HOOKS
         Triggered after sessions_id is set for the cart.
 
 EXPIRE DBIC SESSIONS
-    This command expires/manages DBIC sessions and carts.  NOTE: For proper
+    This command expires/manages DBIC sessions and carts. NOTE: For proper
     functionality please copy/link to Dancer App/bin directory.
 
-         interchange6-expire-sessions
+        interchange6-expire-sessions
 
 ACKNOWLEDGEMENTS
     The Dancer developers and community for their great application

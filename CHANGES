@@ -1,5 +1,15 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.007 Mon Jan 27 18:57:07 2014 CET
+
+    [ENHANCEMENTS]
+
+    * Add shop_attribute keyword.
+    * Checking variants before adding an item to the cart.
+
+    * Include product uri into attributes loaded into the cart.
+    * Add script to expire/manage DBIC sessions/carts
+
 0.006 Thu Jan  2 17:20:57 2014 CET
 
     [ENHANCEMENTS]
