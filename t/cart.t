@@ -6,7 +6,7 @@ use warnings;
 use Test::More tests => 40;
 use Interchange6::Schema;
 
-use Dancer qw(:syntax);
+use Dancer qw(:tests);
 use Dancer::Plugin::Interchange6;
 
 use Data::Dumper;
