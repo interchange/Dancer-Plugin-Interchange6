@@ -8,7 +8,7 @@ use DBICx::TestDatabase;
 use Interchange6::Schema;
 use Interchange6::Schema::Populate::CountryLocale;
 
-use Dancer ':syntax';
+use Dancer qw(:syntax !pass);
 use Dancer::Plugin::Interchange6;
 
 my @all_handles = Test::Database->handles();
