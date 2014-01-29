@@ -124,8 +124,6 @@ sub _create_cart {
     my %cart;
 
     %cart = (name => $self->name,
-             created => $self->created,
-             last_modified => $self->last_modified,
              sessions_id => $self->{session_id},
              );
 
