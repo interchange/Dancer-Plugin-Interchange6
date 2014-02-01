@@ -63,6 +63,7 @@ shop_product->create({sku => '123'});
 # Items
 $cart = cart('new');
 $modified = $cart->last_modified;
+sleep 1; # so we can check last_modified
 $item = {};
 $ret = $cart->add($item);
 ok(! defined($ret), "Testing empty item.");
@@ -85,7 +86,7 @@ $item->{price} = '42';
 $ret = $cart->add($item);
 ok(ref($ret) eq 'HASH', "Testing adding correct item.")
     || diag "Cart error: $cart->error";
-ok($cart->last_modified >= $dt_now, "Check for update on last modified value.");
+ok($cart->last_modified >= $modified, "Check for update on last modified value.");
 $ret = $cart->items();
 ok(@$ret == 1, "Check number of items in the cart is one")
     || diag "Items: $ret";
