@@ -10,7 +10,10 @@ use Dancer qw(:tests);
 use Dancer::Plugin::Interchange6;
 
 use Data::Dumper;
+use DateTime;
 use File::Temp 'tempfile';
+
+my $dt_now = DateTime->now;
 
 my $filename;
 
@@ -46,10 +49,10 @@ ok($name eq 'discount', "Testing custom name.");
 
 # Values for created / modified
 $ret = $cart->created;
-ok($ret > 0, "Testing cart creation time: $ret.");
+ok($ret >= $dt_now, "Testing cart creation time: $ret.");
 
 $ret = $cart->last_modified;
-ok($ret > 0, "Testing cart modification time: $ret.");
+ok($ret >= $dt_now, "Testing cart modification time: $ret.");
 
 # Add items for testing
 shop_product->create({sku => 'ABC'});
@@ -60,6 +63,7 @@ shop_product->create({sku => '123'});
 # Items
 $cart = cart('new');
 $modified = $cart->last_modified;
+sleep 1; # so we can check last_modified
 $item = {};
 $ret = $cart->add($item);
 ok(! defined($ret), "Testing empty item.");
@@ -82,7 +86,7 @@ $item->{price} = '42';
 $ret = $cart->add($item);
 ok(ref($ret) eq 'HASH', "Testing adding correct item.")
     || diag "Cart error: $cart->error";
-ok($cart->last_modified > 0, "Check for update on last modified value.");
+ok($cart->last_modified >= $modified, "Check for update on last modified value.");
 $ret = $cart->items();
 ok(@$ret == 1, "Check number of items in the cart is one")
     || diag "Items: $ret";
