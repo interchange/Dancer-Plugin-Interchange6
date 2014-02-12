@@ -11,14 +11,40 @@ Dancer::Plugin::Interchange6::Cart::DBIC - DBIC cart backend for Interchange6
 
 use Dancer qw/session hook/;
 use Dancer::Plugin::DBIC;
+use Moo;
+use Interchange6::Types;
 
-use base 'Interchange6::Cart';
+extends 'Interchange6::Cart';
+
+use namespace::clean;
 
 =head1 METHODS
 
 =head2 init
 
 =cut
+
+has settings => (
+    is => 'rw',
+    isa => HashRef,
+    default => sub { {} },
+);
+
+has sqla => (
+    is => 'rw',
+    default => sub { schema('default') },
+);
+
+sub BUILD {
+    my $self = shift;
+    hook 'after_cart_add' => sub {$self->_after_cart_add(@_)};
+    hook 'after_cart_update' => sub {$self->_after_cart_update(@_)};
+    hook 'after_cart_remove' => sub {$self->_after_cart_remove(@_)};
+    hook 'after_cart_rename' => sub {$self->_after_cart_rename(@_)};
+    hook 'after_cart_clear' => sub {$self->_after_cart_clear(@_)};
+    hook 'after_cart_set_users_id' => sub {$self->_after_cart_set_users_id(@_)};
+    hook 'after_cart_set_sessions_id' => sub {$self->_after_cart_set_sessions_id(@_)};
+}
 
 sub init {
     my ($self, %args) = @_;
@@ -30,17 +56,11 @@ sub init {
 	};
     };
 
-    $self->{session_id} = $args{session_id} || '';
-    $self->{settings} = $args{settings} || {};
-    $self->{sqla} = schema('default');
-    
-    hook 'after_cart_add' => sub {$self->_after_cart_add(@_)};
-    hook 'after_cart_update' => sub {$self->_after_cart_update(@_)};
-    hook 'after_cart_remove' => sub {$self->_after_cart_remove(@_)};
-    hook 'after_cart_rename' => sub {$self->_after_cart_rename(@_)};
-    hook 'after_cart_clear' => sub {$self->_after_cart_clear(@_)};
-    hook 'after_cart_set_users_id' => sub {$self->_after_cart_set_users_id(@_)};
-    hook 'after_cart_set_sessions_id' => sub {$self->_after_cart_set_sessions_id(@_)};
+}
+
+sub execute_hook {
+    my $self = shift;
+    Dancer::Factory::Hook->instance->execute_hooks(@_);
 }
 
 =head2 load
@@ -66,9 +86,9 @@ sub load {
             $code = $result->next->id;
         }
     }
-    elsif ($args{session_id}) {
-        # determine cart code (from session_id)
-        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.sessions_id' => $args{session_id}});
+    elsif ($args{sessions_id}) {
+        # determine cart code (from sessions_id)
+        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.sessions_id' => $args{sessions_id}});
         if ($result->count > 0) {
             $code = $result->next->id;
         }
@@ -126,7 +146,7 @@ sub _create_cart {
     %cart = (name => $self->name,
              created => $self->created,
              last_modified => $self->last_modified,
-             sessions_id => $self->{session_id},
+             sessions_id => $self->{sessions_id},
              );
 
     if (defined $self->{users_id}) {
@@ -143,9 +163,9 @@ sub _create_cart {
 # loads cart from database
 sub _load_cart {
     my ($self, $result) = @_;
-    my ($record, @items);
+    my ($record, @products);
 
-    # retrieve items from database
+    # retrieve products from database
     my $related = $result->search_related('CartProduct',
                                           {},
                                           {
@@ -155,7 +175,7 @@ sub _load_cart {
         ;
 
     while (my $record = $related->next) {
-        push @items, {sku => $record->Product->sku,
+        push @products, {sku => $record->Product->sku,
                       name => $record->Product->name,
                       price => $record->Product->price,
                       uri => $record->Product->uri,
@@ -163,82 +183,82 @@ sub _load_cart {
                       };
     }
 
-    $self->seed(\@items);
+    $self->seed(\@products);
 }
 
 sub _find_and_update {
-    my ($self, $sku, $new_item) = @_;
+    my ($self, $sku, $new_product) = @_;
 
     my $cp = $self->{sqla}->resultset('CartProduct')->find({carts_id => $self->{id},
                                                             sku => $sku});
 
-    $cp->update($new_item);
+    $cp->update($new_product);
 }
 
 
 # hook methods
 sub _after_cart_add {
     my ($self, @args) = @_;
-    my ($item, $update, $record);
+    my ($product, $update, $record);
 
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
     }
 
-    $item = $args[1];
+    $product = $args[1];
     $update = $args[2];
 
     unless ($self->{id}) {
         $self->_create_cart;
     }
 
-    # first check whether item exists
-    if (! resultset('Product')->find($item->{sku})) {
-        $self->{error} = ("Item $item->{sku} doesn't exist.");
+    # first check whether product exists
+    if (! resultset('Product')->find($product->{sku})) {
+        $self->set_error("Item $product->{sku} doesn't exist.");
         return;
     }
 
     if ($update) {
-        # update item in database
-        $record = {quantity => $item->{quantity}};
-        $self->_find_and_update($item->{sku}, $record);
+        # update product in database
+        $record = {quantity => $product->quantity};
+        $self->_find_and_update($product->sku, $record);
     }
     else {
-        # add new item to database
-        $record = {carts_id => $self->{id}, sku => $item->{sku}, quantity => $item->{quantity}, cart_position => 0};
+        # add new product to database
+        $record = {carts_id => $self->{id}, sku => $product->{sku}, quantity => $product->{quantity}, cart_position => 0};
         resultset('CartProduct')->create($record);
     }
 }
 
 sub _after_cart_update {
     my ($self, @args) = @_;
-    my ($item, $new_item, $count);
+    my ($product, $new_product, $count);
 
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
     }
 
-    $item = $args[1];
-    $new_item = $args[2];
+    $product = $args[1];
+    $new_product = $args[2];
 
-    $self->_find_and_update($item->{sku}, $new_item);
+    $self->_find_and_update($product->{sku}, $new_product);
 }
 
 sub _after_cart_remove {
     my ($self, @args) = @_;
-    my ($item);
+    my ($product);
 
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
     }
 
-    $item = $args[1];
+    $product = $args[1];
 
      my $cp = $self->{sqla}->resultset('CartProduct')->find({carts_id => $self->{id},
-                                                            sku => $item->{sku}});
+                                                            sku => $product->{sku}});
     $cp->delete;
 }
 
