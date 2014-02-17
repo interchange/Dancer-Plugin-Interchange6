@@ -20,8 +20,6 @@ use namespace::clean;
 
 =head1 METHODS
 
-=head2 init
-
 =cut
 
 has settings => (
@@ -95,10 +93,10 @@ sub load {
     }
 
     unless ($code) {
-        $self->{id} = 0;
+        $self->id;
         return;
     }
-    $self->{id} = $code;
+    $self->id($code);
 
     $self->_load_cart($result);
 }
@@ -109,24 +107,28 @@ Return cart identifier.
 
 =cut
 
-sub id {
-    my $self = shift;
+around id => sub {
+    my ( $orig, $self, $id ) = @_;
 
-    if (@_ && defined ($_[0])) {
-        my $id = $_[0];
+    Dancer::Logger::debug "in around id";
 
-        if ($id =~ /^[0-9]+$/) {
-            $self->{id} = $id;
-            $self->_load_cart;
-        }
+    if ($id && defined($id) && $id =~ /^[0-9]+$/) {
+        $id = $orig->($self, $id);
     }
-    elsif (! $self->{id}) {
-        # forces us to create entry in cart table
+    else {
+        $id = $orig->($self);
+    }
+    unless ( $id ) {
+
+        # still no id - must be no cart so create one
         $self->_create_cart;
+        $id = $orig->($self);
     }
 
-    return $self->{id};
-}
+    Dancer::Logger::debug "cart id is: $id";
+
+    return $id;
+};
 
 =head2 save
 
@@ -143,27 +145,31 @@ sub _create_cart {
     my $self = shift;
     my %cart;
 
+    Dancer::Logger::debug "in sub _create_cart";
+
     %cart = (name => $self->name,
              created => $self->created,
              last_modified => $self->last_modified,
-             sessions_id => $self->{sessions_id},
+             sessions_id => $self->sessions_id,
              );
 
-    if (defined $self->{users_id}) {
-        $cart{users_id} = $self->{users_id};
+    if (defined $self->users_id) {
+        $cart{users_id} = $self->users_id;
     }
 
     my $rs = resultset('Cart')->create(\%cart);
     
     Dancer::Logger::debug("New cart: ", $rs->id, " => ", \%cart);
 
-    $self->{id} = $rs->id;
+    $self->id($rs->id);
 }
 
 # loads cart from database
 sub _load_cart {
     my ($self, $result) = @_;
     my ($record, @products);
+
+    Dancer::Logger::debug "in sub _load_cart";
 
     # retrieve products from database
     my $related = $result->search_related('CartProduct',
@@ -178,16 +184,19 @@ sub _load_cart {
         push @products, {sku => $record->Product->sku,
                       name => $record->Product->name,
                       price => $record->Product->price,
-                      uri => $record->Product->uri,
+                      #uri => $record->Product->uri,
                       quantity => $record->quantity,
                       };
     }
 
     $self->seed(\@products);
+
 }
 
 sub _find_and_update {
     my ($self, $sku, $new_product) = @_;
+
+    Dancer::Logger::debug "in sub _find_and_update";
 
     my $cp = $self->{sqla}->resultset('CartProduct')->find({carts_id => $self->{id},
                                                             sku => $sku});
@@ -201,6 +210,8 @@ sub _after_cart_add {
     my ($self, @args) = @_;
     my ($product, $update, $record);
 
+    Dancer::Logger::debug "in sub _after_cart_add";
+
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
@@ -209,7 +220,7 @@ sub _after_cart_add {
     $product = $args[1];
     $update = $args[2];
 
-    unless ($self->{id}) {
+    unless ($self->id) {
         $self->_create_cart;
     }
 
@@ -226,7 +237,7 @@ sub _after_cart_add {
     }
     else {
         # add new product to database
-        $record = {carts_id => $self->{id}, sku => $product->{sku}, quantity => $product->{quantity}, cart_position => 0};
+        $record = {carts_id => $self->id, sku => $product->{sku}, quantity => $product->{quantity}, cart_position => 0};
         resultset('CartProduct')->create($record);
     }
 }
@@ -234,6 +245,8 @@ sub _after_cart_add {
 sub _after_cart_update {
     my ($self, @args) = @_;
     my ($product, $new_product, $count);
+
+    Dancer::Logger::debug "in sub _after_cart_update";
 
     unless ($self eq $args[0]) {
 	# not our cart
@@ -250,6 +263,8 @@ sub _after_cart_remove {
     my ($self, @args) = @_;
     my ($product);
 
+    Dancer::Logger::debug "in sub _after_cart_remove";
+
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
@@ -265,6 +280,8 @@ sub _after_cart_remove {
 sub _after_cart_rename {
     my ($self, @args) = @_;
 
+    Dancer::Logger::debug "in sub _after_cart_rename";
+
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
@@ -276,17 +293,21 @@ sub _after_cart_rename {
 sub _after_cart_clear {
     my ($self, @args) = @_;
 
+    Dancer::Logger::debug "in sub _after_cart_clear";
+
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
     }
 
     # delete all products from this cart
-    my $rs = $self->{sqla}->resultset('Cart')->search({'CartProduct.carts_id' => $self->{id}}, {join => 'CartProduct'})->delete_all;
+    my $rs = $self->{sqla}->resultset('Cart')->search({'CartProduct.carts_id' => $self->id}, {join => 'CartProduct'})->delete_all;
 }
 
 sub _after_cart_set_users_id {
     my ($self, @args) = @_;
+
+    Dancer::Logger::debug "in sub _after_cart_set_users_id";
 
     unless ($self eq $args[0]) {
         # not our cart
@@ -294,18 +315,20 @@ sub _after_cart_set_users_id {
     }
 
     # skip if cart is not yet stored in the database
-    return unless $self->{id};
+    return unless $self->id;
 
     # change users_id
     my $data = $args[1];
 
-    Dancer::Logger::debug("Change users_id of $self->{id} to: ", $data);
+    Dancer::Logger::debug("Change users_id of $self->id to: ", $data);
 
-    $self->{sqla}->resultset('Cart')->find($self->{id})->update($data);
+    $self->{sqla}->resultset('Cart')->find($self->id)->update($data);
 }
 
 sub _after_cart_set_sessions_id {
     my ($self, @args) = @_;
+
+    Dancer::Logger::debug "in sub _after_cart_set_sessions_id";
 
     unless ($self eq $args[0]) {
         # not our cart

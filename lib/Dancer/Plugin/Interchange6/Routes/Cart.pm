@@ -68,7 +68,6 @@ sub cart_route {
                 else {
                     $cart_item = cart->add($cart_input);
                 }
-
                 unless ($cart_item) {
                     warning "Cart error: ", cart->error;
                     $values{cart_error} = cart->error;
@@ -77,7 +76,7 @@ sub cart_route {
         }
 
         # add stuff useful for cart display
-        $values{cart} = cart->items;
+        $values{cart} = cart->get_products;
         $values{cart_subtotal} = cart->subtotal;
         $values{cart_total} = cart->total;
 

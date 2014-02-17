@@ -310,21 +310,24 @@ sub _shop_cart {
     my $name = 'main';
     my ($user_ref, $cart);
 
+    Dancer::Logger::debug "in Interchange6::_shop_cart";
+
     if (@_ == 1) {
         $name = $_[0];
     }
 
     $cart = Interchange6::Class->instantiate('Dancer::Plugin::Interchange6::Cart::DBIC',
                                        name => $name,
-                                       session_id => session->id,
-                                       run_hooks => sub {execute_hook(@_)});
+                                       sessions_id => session->id,
+                                       execute_hook => sub {execute_hook(@_)},
+                                   );
 
     if ($user_ref = logged_in_user) {
         $cart->load(users_id => $user_ref->users_id,
-                    session_id => session->id);
+                    sessions_id => session->id);
     }
     else {
-        $cart->load(session_id => session->id);
+        $cart->load(sessions_id => session->id);
     }
 
     return $cart;
