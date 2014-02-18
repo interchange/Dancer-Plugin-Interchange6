@@ -27,7 +27,7 @@ sub checkout_route {
         my %values;
 
         # add stuff useful for cart display
-        $values{cart} = cart->items;
+        $values{cart} = cart->products;
         $values{cart_subtotal} = cart->subtotal;
         $values{cart_total} = cart->total;
 
