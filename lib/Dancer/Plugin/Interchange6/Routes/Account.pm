@@ -38,6 +38,10 @@ sub account_routes {
 
         my %values;
 
+        if ( vars->{login_failed} ) {
+            $values{error} = "Login failed";
+        }
+
         # call before_login_display route so template tokens
         # can be injected
         execute_hook('before_login_display', \%values);
