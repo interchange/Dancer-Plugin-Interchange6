@@ -80,7 +80,7 @@ sub load {
         $self->{users_id} = $args{users_id};
 
         # determine cart code (from uid)
-        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.users_id' => $args{users_id}});
+        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.users_id' => $args{users_id}, 'me.sessions_id' => $args{sessions_id}});
 
         if ($result->count > 0) {
             $code = $result->next->id;
@@ -101,6 +101,83 @@ sub load {
     $self->id($code);
 
     $self->_load_cart($result);
+}
+
+sub load_saved_products {
+    my ($self, %args) = @_;
+    my ($uid, $result, $code);
+
+    Dancer::Logger::debug "in sub load_saved_products";
+    
+    # should not be called unless user is logged in
+    return unless $self->users_id;
+
+    Dancer::Logger::debug "HERE 2";
+
+    # grab the resultset for current cart so we can update products easily if
+    # we find old saved cart products
+
+    my $current_cart_rs = $self->{sqla}->resultset('Cart')->search(
+        {
+            'me.name'        => $self->name,
+            'me.users_id'    => $self->users_id,
+            'me.sessions_id' => $self->sessions_id,
+        }
+    )->search_related(
+        'CartProduct',
+        {},
+    );
+
+    # now find old carts and see if they have products we should move into
+    # our new cart + remove the old carts as we go
+
+    $result = $self->{sqla}->resultset('Cart')->search(
+        {
+            'me.name'        => $self->name,
+            'me.users_id'    => $self->users_id,
+            'me.sessions_id' => [ undef, { '!=', $self->sessions_id }],
+        }
+    );
+
+    while ( my $cart = $result->next ) {
+
+        my $related = $cart->search_related(
+            'CartProduct',
+            {},
+            {
+                join => 'Product',
+                prefetch => 'Product',
+            }
+        );
+        while ( my $record = $related->next ) {
+
+            # look for this sku in our current cart
+
+            my $new_rs = $current_cart_rs->search(
+                { sku => $record->sku }
+            );
+
+            if ( $new_rs->count > 0 ) {
+
+                # we have this sku in our new cart so update quantity
+                my $product = $new_rs->next;
+                $product->update(
+                    {
+                        quantity => $product->quantity + $record->quantity
+                    }
+                );
+            }
+            else {
+
+                # move product into new cart
+                $record->update({ carts_id => $self->id });
+            }
+        }
+
+        # delete the old cart (cascade deletes related cart products)
+        $cart->delete;
+    }
+
 }
 
 =head2 id
@@ -183,20 +260,12 @@ sub _load_cart {
         ;
 
     while (my $record = $related->next) {
-        my $sku = $record->Product->sku;
-        if ( defined $products{$sku} ) {
-            # combine!
-            $products{$sku}{quantity} += $record->quantity;
-        }
-        else {
-            # new item
-            $products{$sku} = {
-                sku => $sku,
-                name => $record->Product->name,
-                price => $record->Product->price,
-                quantity => $record->quantity,
-            };
-        }
+        push @products, {
+            sku      => $record->sku,
+            name     => $record->Product->name,
+            price    => $record->Product->price,
+            quantity => $record->quantity,
+        };
     }
 
     $self->seed(\@products);
@@ -266,6 +335,7 @@ sub _after_cart_update {
     $new_product = $args[2];
 
     $self->_find_and_update($product->{sku}, $new_product);
+    #session products => $self->products;
 }
 
 sub _after_cart_remove {
