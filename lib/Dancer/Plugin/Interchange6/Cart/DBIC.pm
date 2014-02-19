@@ -169,7 +169,7 @@ sub _create_cart {
 # loads cart from database
 sub _load_cart {
     my ($self, $result) = @_;
-    my ($record, @products);
+    my ($record, %products, @products);
 
     Dancer::Logger::debug "in sub _load_cart";
 
@@ -183,16 +183,23 @@ sub _load_cart {
         ;
 
     while (my $record = $related->next) {
-        push @products, {sku => $record->Product->sku,
-                      name => $record->Product->name,
-                      price => $record->Product->price,
-                      #uri => $record->Product->uri,
-                      quantity => $record->quantity,
-                      };
+        my $sku = $record->Product->sku;
+        if ( defined $products{$sku} ) {
+            # combine!
+            $products{$sku}{quantity} += $record->quantity;
+        }
+        else {
+            # new item
+            $products{$sku} = {
+                sku => $sku,
+                name => $record->Product->name,
+                price => $record->Product->price,
+                quantity => $record->quantity,
+            };
+        }
     }
 
     $self->seed(\@products);
-
 }
 
 sub _find_and_update {
