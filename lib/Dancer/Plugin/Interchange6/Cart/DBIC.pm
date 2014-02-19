@@ -71,6 +71,8 @@ sub load {
     my ($self, %args) = @_;
     my ($uid, $name, $result, $code);
 
+    Dancer::Logger::debug "in sub load";
+
     # check whether user is authenticated or not
     $uid = $args{users_id};
 
