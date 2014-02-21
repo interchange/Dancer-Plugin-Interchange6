@@ -77,7 +77,15 @@ sub account_routes {
             # sessions were sessions_id is undef in db cart
             $current_cart->load_saved_products;
 
-            return redirect '/' . $routes_config->{account}->{login}->{success_uri};
+            if ( session('return_url') ) {
+                my $url = session('return_url');
+                session return_url => undef;
+                return redirect $url;
+            }
+            else {
+                return redirect '/'
+                  . $routes_config->{account}->{login}->{success_uri};
+            }
         } else {
             debug "Authentication failed for ", params->{username};
 
