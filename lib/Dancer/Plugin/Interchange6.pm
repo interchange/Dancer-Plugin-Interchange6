@@ -3,7 +3,6 @@ package Dancer::Plugin::Interchange6;
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Dancer qw(:syntax !before !after);
 use Dancer::Plugin;
 use Dancer::Plugin::DBIC;
@@ -310,9 +309,6 @@ register shop_cart => \&_shop_cart;
 sub _shop_cart {
     my $name = 'main';
     my ($user_ref, $cart);
-
-    Dancer::Logger::debug "in Interchange6::_shop_cart";
-    Dancer::Logger::debug "caller: " . Dumper(caller);
 
     if (@_ == 1) {
         $name = $_[0];
