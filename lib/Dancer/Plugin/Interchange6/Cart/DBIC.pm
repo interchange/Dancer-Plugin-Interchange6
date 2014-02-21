@@ -44,18 +44,6 @@ sub BUILD {
     hook 'after_cart_set_sessions_id' => sub {$self->_after_cart_set_sessions_id(@_)};
 }
 
-sub init {
-    my ($self, %args) = @_;
-    my (%q_args);
-
-    if ($args{settings}->{log_queries}) {
-	$q_args{log_queries} = sub {
-	    Dancer::Logger::debug(@_);
-	};
-    };
-
-}
-
 sub execute_hook {
     my $self = shift;
     Dancer::Factory::Hook->instance->execute_hooks(@_);
@@ -70,8 +58,6 @@ Loads cart from database.
 sub load {
     my ($self, %args) = @_;
     my ($uid, $name, $result, $code);
-
-    Dancer::Logger::debug "in sub load";
 
     # check whether user is authenticated or not
     $uid = $args{users_id};
@@ -107,12 +93,8 @@ sub load_saved_products {
     my ($self, %args) = @_;
     my ($uid, $result, $code);
 
-    Dancer::Logger::debug "in sub load_saved_products";
-    
     # should not be called unless user is logged in
     return unless $self->users_id;
-
-    Dancer::Logger::debug "HERE 2";
 
     # grab the resultset for current cart so we can update products easily if
     # we find old saved cart products
@@ -189,8 +171,6 @@ Return cart identifier.
 around id => sub {
     my ( $orig, $self, $id ) = @_;
 
-    Dancer::Logger::debug "in around id";
-
     if ($id && defined($id) && $id =~ /^[0-9]+$/) {
         $id = $orig->($self, $id);
     }
@@ -203,8 +183,6 @@ around id => sub {
         $self->_create_cart;
         $id = $orig->($self);
     }
-
-    Dancer::Logger::debug "cart id is: $id";
 
     return $id;
 };
@@ -223,8 +201,6 @@ sub save {
 sub _create_cart {
     my $self = shift;
     my %cart;
-
-    Dancer::Logger::debug "in sub _create_cart";
 
     %cart = (name => $self->name,
              created => $self->created,
@@ -247,8 +223,6 @@ sub _create_cart {
 sub _load_cart {
     my ($self, $result) = @_;
     my ($record, %products, @products);
-
-    Dancer::Logger::debug "in sub _load_cart";
 
     # retrieve products from database
     my $related = $result->search_related('CartProduct',
@@ -274,8 +248,6 @@ sub _load_cart {
 sub _find_and_update {
     my ($self, $sku, $new_product) = @_;
 
-    Dancer::Logger::debug "in sub _find_and_update";
-
     my $cp = $self->{sqla}->resultset('CartProduct')->find({carts_id => $self->{id},
                                                             sku => $sku});
 
@@ -287,8 +259,6 @@ sub _find_and_update {
 sub _after_cart_add {
     my ($self, @args) = @_;
     my ($product, $update, $record);
-
-    Dancer::Logger::debug "in sub _after_cart_add";
 
     unless ($self eq $args[0]) {
 	# not our cart
@@ -324,8 +294,6 @@ sub _after_cart_update {
     my ($self, @args) = @_;
     my ($product, $new_product, $count);
 
-    Dancer::Logger::debug "in sub _after_cart_update";
-
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
@@ -342,8 +310,6 @@ sub _after_cart_remove {
     my ($self, @args) = @_;
     my ($product);
 
-    Dancer::Logger::debug "in sub _after_cart_remove";
-
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
@@ -359,8 +325,6 @@ sub _after_cart_remove {
 sub _after_cart_rename {
     my ($self, @args) = @_;
 
-    Dancer::Logger::debug "in sub _after_cart_rename";
-
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
@@ -371,8 +335,6 @@ sub _after_cart_rename {
 
 sub _after_cart_clear {
     my ($self, @args) = @_;
-
-    Dancer::Logger::debug "in sub _after_cart_clear";
 
     unless ($self eq $args[0]) {
 	# not our cart
@@ -385,8 +347,6 @@ sub _after_cart_clear {
 
 sub _after_cart_set_users_id {
     my ($self, @args) = @_;
-
-    Dancer::Logger::debug "in sub _after_cart_set_users_id";
 
     unless ($self eq $args[0]) {
         # not our cart
@@ -406,8 +366,6 @@ sub _after_cart_set_users_id {
 
 sub _after_cart_set_sessions_id {
     my ($self, @args) = @_;
-
-    Dancer::Logger::debug "in sub _after_cart_set_sessions_id";
 
     unless ($self eq $args[0]) {
         # not our cart
