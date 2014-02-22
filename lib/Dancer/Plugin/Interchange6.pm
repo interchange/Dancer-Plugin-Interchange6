@@ -235,7 +235,7 @@ register shop_product => sub {
 };
 
 register shop_review => sub {
-    _shop_review('Review', @_);
+    _shop_resultset('Review', @_);
 };
 
 register shop_user => sub {
