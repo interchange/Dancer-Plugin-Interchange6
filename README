@@ -2,7 +2,7 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.007
+    Version 0.008
 
 REQUIREMENTS
     All Interchange6 Dancer applications need to use the
@@ -127,6 +127,8 @@ EXPIRE DBIC SESSIONS
 ACKNOWLEDGEMENTS
     The Dancer developers and community for their great application
     framework and for their quick and competent support.
+
+    Peter Mottram for his patches.
 
 LICENSE AND COPYRIGHT
     Copyright 2010-2013 Stefan Hornburg (Racke).

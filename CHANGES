@@ -1,5 +1,29 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.008 Sun Feb 23 12:25:00 2014 CET
+
+    [ENHANCEMENTS]
+
+    * Add shop_order and shop_review keywords.
+    * Update payment_order after payment transaction.
+    * Add active configuration option for cart and checkout routes.
+    * Allow URIs for cart and checkout routes to be configured.
+    * Acknowledge schema key passed to shop_schema.
+    * Handle created and last_modified as DateTime objects
+      (Peter Mottram, GH #5)
+
+    [BUG FIXES]
+
+    * Use different schema keys for each database driver to fix test
+      failures with new tests.
+    * Exclude inactive products from navigation search results.
+    * Use Dancer qw(:tests) to avoid clashing with Test::More
+      (Peter Mottram, GH #3).
+
+    [TESTS]
+
+    * Add Product and Review result class tests.
+
 0.007 Mon Jan 27 18:57:07 2014 CET
 
     [ENHANCEMENTS]
