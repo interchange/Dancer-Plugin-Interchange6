@@ -275,14 +275,30 @@ register shop_charge => sub {
 
     # log request
     $schema = _shop_schema();
-    $schema->resultset('PaymentOrder')->create({payment_mode => $provider,
-                                                status => 'request',
-                                                sessions_id => session->id,
-                                                payment_action => 'charge',
-                                                amount => $args{amount},
-                                               });
+
+    my %payment_data = (payment_mode => $provider,
+                        status => 'request',
+                        sessions_id => session->id,
+                        payment_action => 'charge',
+                        amount => $args{amount},
+                        users_id => session('logged_in_user_id'),
+                        );
+
+    my $payment_order = $schema->resultset('PaymentOrder')->create(\%payment_data);
 
     $bop_object->charge(%args);
+
+    if ($bop_object->is_success) {
+        $payment_order->update({
+            status => 'success',
+            auth_code => $bop_object->authorization,
+        });
+    }
+    else {
+        $payment_order->update({
+            status => 'failure',
+        });
+    }
 
 	return $bop_object;
 };
