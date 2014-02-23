@@ -360,6 +360,8 @@ register_plugin;
 The L<Dancer> developers and community for their great application framework
 and for their quick and competent support.
 
+Peter Mottram for his patches.
+
 =head1 LICENSE AND COPYRIGHT
 
 Copyright 2010-2013 Stefan Hornburg (Racke).
