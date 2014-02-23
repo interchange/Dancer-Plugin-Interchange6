@@ -60,8 +60,10 @@ The template for each route type can be configured:
             uri: logout
         cart:
           template: cart
+          uri: cart
         checkout:
           template: checkout
+          uri: checkout
         navigation:
           template: listing
         product:
@@ -123,8 +125,12 @@ our %route_defaults = (
                                               uri => 'logout',
                                              },
                                   },
-                       cart => {template => 'cart'},
-                       checkout => {template => 'checkout'},
+                       cart => {template => 'cart',
+                                uri => 'cart',
+                            },
+                       checkout => {template => 'checkout',
+                                    uri => 'checkout',
+                                },
                        navigation => {template => 'listing'},
                        product => {template => 'product'});
 
@@ -149,13 +155,13 @@ sub _setup_routes {
 
     # routes for cart
     my $cart_sub = Dancer::Plugin::Interchange6::Routes::Cart::cart_route($routes_config);
-    get '/cart' => $cart_sub;
-    post '/cart' => $cart_sub;
+    get '/' . $routes_config->{cart}->{uri} => $cart_sub;
+    post '/' . $routes_config->{cart}->{uri} => $cart_sub;
 
     # routes for checkout
     my $checkout_sub = Dancer::Plugin::Interchange6::Routes::Checkout::checkout_route($routes_config);
-    get '/checkout' => $checkout_sub;
-    post '/checkout' => $checkout_sub;
+    get '/' . $routes_config->{checkout}->{uri} => $checkout_sub;
+    post '/' . $routes_config->{checkout}->{uri} => $checkout_sub;
 
     # fallback route for flypage and navigation
     get qr{/(?<path>.+)} => sub {
