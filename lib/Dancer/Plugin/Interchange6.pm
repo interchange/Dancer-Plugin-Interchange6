@@ -211,7 +211,7 @@ register_hook(qw/before_cart_add_validate
                 /);
 
 register shop_schema => sub {
-    _shop_schema();
+    _shop_schema(@_);
 };
 
 register shop_address => sub {
@@ -311,7 +311,16 @@ sub _shop_cart {
 };
 
 sub _shop_schema {
-    return schema;
+    my $schema_key;
+
+    if (@_) {
+        $schema_key = $_[0];
+    }
+    else {
+        $schema_key = 'default';
+    }
+
+    return schema($schema_key);
 };
 
 sub _shop_resultset {
