@@ -24,7 +24,7 @@ for my $testdb (@all_handles) {
     push @handles, $testdb;
 }
 
-my $tests = 8 * scalar(@handles);
+my $tests = 10 * scalar(@handles);
 
 if ($tests) {
     # determine number of tests
@@ -80,13 +80,43 @@ for my $testdb (@handles) {
     $ret = shop_country->find('PL');
 
     isa_ok($ret, 'Interchange6::Schema::Result::Country');
-    ok($ret->name eq 'Poland');
-    ok($ret->show_states == 0);
+    ok($ret->name eq 'Poland', 'Country name Poland');
+    ok($ret->show_states == 0, 'Show states for Poland');
 
     # check US country
     $ret = shop_country->find('US');
 
     isa_ok($ret, 'Interchange6::Schema::Result::Country');
-    ok($ret->name eq 'United States');
-    ok($ret->show_states == 1);
+    ok($ret->name eq 'United States', 'Country name United States');
+    ok($ret->show_states == 1, 'Show states for United States');
+
+    # create product
+    my %product_data;
+
+    %product_data = (
+        sku => 'F0001',
+        name => 'One Dozen Roses',
+        short_description => 'What says I love you better than 1 dozen fresh roses?',
+        description => 'Surprise the one who makes you smile, or express yourself perfectly with this stunning bouquet of one dozen fresh red roses. This elegant arrangement is a truly thoughtful gift that shows how much you care.',
+        price => '39.95',
+        uri => 'one-dozen-roses',
+        weight => '4',
+    );
+
+    $ret = shop_product->create(\%product_data);
+    isa_ok($ret, 'Interchange6::Schema::Result::Product');
+
+    # create review
+    my %review_data;
+
+    %review_data = (
+        sku => 'F0001',
+        users_id => $user->id,
+        title => 'test',
+        content => 'Text review',
+        rating => 2,
+    );
+
+    $ret = shop_review->create(\%review_data);
+    isa_ok($ret, 'Interchange6::Schema::Result::Review');
 }
