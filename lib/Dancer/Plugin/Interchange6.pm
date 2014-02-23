@@ -230,6 +230,10 @@ register shop_navigation => sub {
     _shop_resultset('Navigation', @_);
 };
 
+register shop_order => sub {
+    _shop_resultset('Order', @_);
+};
+
 register shop_product => sub {
     _shop_resultset('Product', @_);
 };
