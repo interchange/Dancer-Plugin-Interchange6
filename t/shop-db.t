@@ -38,7 +38,9 @@ else {
 my $pop_countries = Interchange6::Schema::Populate::CountryLocale->new->records;
 
 for my $testdb (@handles) {
-    diag 'Testing with DBI driver ' . $testdb->dbd();
+    my $driver = $testdb->dbd();
+
+    diag "Testing with DBI driver $driver";
 
     my $dbh = $testdb->dbh();
     my $dbd = $testdb->dbd();
@@ -50,14 +52,14 @@ for my $testdb (@handles) {
 
     isa_ok($schema, 'Interchange6::Schema');
 
-    set plugins => {DBIC => {default => {dsn => $connection_info[0],
+    set plugins => {DBIC => {$driver => {dsn => $connection_info[0],
                                          user => $connection_info[1],
                                          pass => $connection_info[2],
                                      schema_class => 'Interchange6::Schema'}
                         }
                };
 
-    my $shop_schema = shop_schema;
+    my $shop_schema = shop_schema($driver);
 
     # deploy our schema
     $schema->deploy({add_drop_table => 1});
