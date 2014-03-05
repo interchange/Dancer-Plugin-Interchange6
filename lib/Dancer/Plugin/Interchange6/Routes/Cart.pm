@@ -71,7 +71,7 @@ sub cart_route {
 
                 debug "Cart input: ", $cart_input;
 
-                $cart->add($cart_input);
+                $cart_item = $cart->add($cart_input);
 
                 unless ($cart_item) {
                     warning "Cart error: ", $cart->error;
