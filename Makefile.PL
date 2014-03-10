@@ -13,7 +13,7 @@ WriteMakefile(
     PL_FILES            => {},
     EXE_FILES           => ['bin/interchange6-expire-sessions'],
     BUILD_REQUIRES      => {
-                            'Test::More' => 0,
+                            'Test::Most' => 0,
                             'DBICx::TestDatabase' => 0,
                             'Test::Database' => 0,
                       },
@@ -30,6 +30,7 @@ WriteMakefile(
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Dancer-Plugin-Interchange6-*' },
+    test                => { TESTS => join( ' ', (glob( 't/*.t'), glob('t/*/*.t')))},
     META_MERGE        => {
         resources => {
             repository  => 'https://github.com/interchange/Dancer-Plugin-Interchange6.git',
