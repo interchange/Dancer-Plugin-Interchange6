@@ -284,7 +284,7 @@ cmp_deeply(
         { level => "debug", message => "users accepted user testuser" },
         {
             level   => "debug",
-            message => re('Change users_id of Dancer.+to:.+> 1')
+            message => re('Change users_id.+to:.+> 1')
         }
     ],
     "login successful and users_id set in debug logs"
