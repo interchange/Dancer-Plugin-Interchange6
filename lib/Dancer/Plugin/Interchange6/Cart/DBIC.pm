@@ -28,10 +28,22 @@ has settings => (
     default => sub { {} },
 );
 
+=head2 sqla
+
+A coderef pointing to the current schema.
+
+=cut
+
 has sqla => (
     is => 'rw',
     default => sub { schema('default') },
 );
+
+=head2 BUILD
+
+Inherited method that is used to add the cart hooks.
+
+=cut
 
 sub BUILD {
     my $self = shift;
@@ -43,6 +55,12 @@ sub BUILD {
     hook 'after_cart_set_users_id' => sub {$self->_after_cart_set_users_id(@_)};
     hook 'after_cart_set_sessions_id' => sub {$self->_after_cart_set_sessions_id(@_)};
 }
+
+=head2 execute_hook
+
+Ties Interchange6 hooks into Dancer's hook system.
+
+=cut
 
 sub execute_hook {
     my $self = shift;
@@ -88,6 +106,12 @@ sub load {
 
     $self->_load_cart($result);
 }
+
+=head2 load_saved_products
+
+Pulls old cart items into current cart - used after user login.
+
+=cut
 
 sub load_saved_products {
     my ($self, %args) = @_;

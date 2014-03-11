@@ -16,4 +16,13 @@ t/cart.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
+t/routes/config.yml
+t/routes/lib/TestApp.pm
+t/routes/routes.t
+t/routes/views/cart
+t/routes/views/checkout
+t/routes/views/listing
+t/routes/views/login
+t/routes/views/logout
+t/routes/views/product
 t/shop-db.t
