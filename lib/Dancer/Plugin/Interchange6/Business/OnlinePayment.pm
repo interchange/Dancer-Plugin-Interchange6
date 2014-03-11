@@ -49,6 +49,16 @@ has provider_args => (
     is => 'rwp',
 );
 
+=head2 payment_order
+
+Payment order object.
+
+=cut
+
+has payment_order => (
+    is => 'rw',
+);
+
 =head2 is_success
 
 True if the payment was successful, false otherwise.
