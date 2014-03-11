@@ -267,15 +267,6 @@ register shop_charge => sub {
         die "Settings for provider $provider missing.";
     }
 
-    # create BOP object wrapper with provider settings
-	$bop_object = Dancer::Plugin::Interchange6::Business::OnlinePayment->new($provider, %$provider_settings);
-
-    # call charge method
-    debug "Charging with the following parameters: ", \%args;
-
-    # log request
-    $schema = _shop_schema();
-
     my %payment_data = (payment_mode => $provider,
                         status => 'request',
                         sessions_id => session->id,
@@ -284,7 +275,18 @@ register shop_charge => sub {
                         users_id => session('logged_in_user_id'),
                         );
 
+    # create payment order
+    $schema = _shop_schema();
+
     my $payment_order = $schema->resultset('PaymentOrder')->create(\%payment_data);
+
+    # create BOP object wrapper with provider settings
+	$bop_object = Dancer::Plugin::Interchange6::Business::OnlinePayment->new($provider, %$provider_settings);
+
+    $bop_object->payment_order($payment_order);
+
+    # call charge method
+    debug "Charging with the following parameters: ", \%args;
 
     $bop_object->charge(%args);
 
