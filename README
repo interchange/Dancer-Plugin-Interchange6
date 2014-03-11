@@ -2,7 +2,7 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.008
+    Version 0.009
 
 REQUIREMENTS
     All Interchange6 Dancer applications need to use the
@@ -131,7 +131,7 @@ ACKNOWLEDGEMENTS
     Peter Mottram for his patches.
 
 LICENSE AND COPYRIGHT
-    Copyright 2010-2013 Stefan Hornburg (Racke).
+    Copyright 2010-2014 Stefan Hornburg (Racke).
 
     This program is free software; you can redistribute it and/or modify it
     under the terms of either: the GNU General Public License as published

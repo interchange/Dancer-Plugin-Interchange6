@@ -1,5 +1,17 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.009 Tue Mar 11 19:18:50 2014 CET
+
+    [ENHANCEMENTS]
+
+    * Moo cart rewrite (Peter Mottram).
+    * Add option to use return_url after login success (Peter Mottram).
+    * Add login failure message to login get route (Peter Mottram).
+
+    [TESTS]
+
+    * Routes tests (Peter Mottram, GH #9).
+
 0.008 Sun Feb 23 12:25:00 2014 CET
 
     [ENHANCEMENTS]
