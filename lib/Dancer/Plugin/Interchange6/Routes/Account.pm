@@ -38,6 +38,10 @@ sub account_routes {
 
         my %values;
 
+        if ( vars->{login_failed} ) {
+            $values{error} = "Login failed";
+        }
+
         # call before_login_display route so template tokens
         # can be injected
         execute_hook('before_login_display', \%values);
@@ -69,7 +73,19 @@ sub account_routes {
                 $current_cart->users_id($user->id);
             }
 
-            return redirect '/' . $routes_config->{account}->{login}->{success_uri};
+            # now pull back in old cart items from previous authenticated
+            # sessions were sessions_id is undef in db cart
+            $current_cart->load_saved_products;
+
+            if ( session('return_url') ) {
+                my $url = session('return_url');
+                session return_url => undef;
+                return redirect $url;
+            }
+            else {
+                return redirect '/'
+                  . $routes_config->{account}->{login}->{success_uri};
+            }
         } else {
             debug "Authentication failed for ", params->{username};
 
@@ -79,7 +95,13 @@ sub account_routes {
     };
 
     $routes{logout}->{any} = sub {
-        shop_cart->sessions_id(undef);
+        my $cart = cart;
+        if ( $cart->count > 0 ) {
+            # save our items for next login
+            shop_cart->sessions_id(undef);
+        }
+        # any empty cart with sessions_id matching our session id will be
+        # destroyed here
         session->destroy;
         return redirect '/';
     };

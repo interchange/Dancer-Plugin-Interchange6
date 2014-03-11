@@ -11,29 +11,30 @@ Dancer::Plugin::Interchange6::Cart::DBIC - DBIC cart backend for Interchange6
 
 use Dancer qw/session hook/;
 use Dancer::Plugin::DBIC;
+use Moo;
+use Interchange6::Types;
 
-use base 'Interchange6::Cart';
+extends 'Interchange6::Cart';
+
+use namespace::clean;
 
 =head1 METHODS
 
-=head2 init
-
 =cut
 
-sub init {
-    my ($self, %args) = @_;
-    my (%q_args);
+has settings => (
+    is => 'rw',
+    isa => HashRef,
+    default => sub { {} },
+);
 
-    if ($args{settings}->{log_queries}) {
-	$q_args{log_queries} = sub {
-	    Dancer::Logger::debug(@_);
-	};
-    };
+has sqla => (
+    is => 'rw',
+    default => sub { schema('default') },
+);
 
-    $self->{session_id} = $args{session_id} || '';
-    $self->{settings} = $args{settings} || {};
-    $self->{sqla} = schema('default');
-    
+sub BUILD {
+    my $self = shift;
     hook 'after_cart_add' => sub {$self->_after_cart_add(@_)};
     hook 'after_cart_update' => sub {$self->_after_cart_update(@_)};
     hook 'after_cart_remove' => sub {$self->_after_cart_remove(@_)};
@@ -41,6 +42,11 @@ sub init {
     hook 'after_cart_clear' => sub {$self->_after_cart_clear(@_)};
     hook 'after_cart_set_users_id' => sub {$self->_after_cart_set_users_id(@_)};
     hook 'after_cart_set_sessions_id' => sub {$self->_after_cart_set_sessions_id(@_)};
+}
+
+sub execute_hook {
+    my $self = shift;
+    Dancer::Factory::Hook->instance->execute_hooks(@_);
 }
 
 =head2 load
@@ -60,27 +66,100 @@ sub load {
         $self->{users_id} = $args{users_id};
 
         # determine cart code (from uid)
-        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.users_id' => $args{users_id}});
+        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.users_id' => $args{users_id}, 'me.sessions_id' => $args{sessions_id}});
 
         if ($result->count > 0) {
             $code = $result->next->id;
         }
     }
-    elsif ($args{session_id}) {
-        # determine cart code (from session_id)
-        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.sessions_id' => $args{session_id}});
+    elsif ($args{sessions_id}) {
+        # determine cart code (from sessions_id)
+        $result = $self->{sqla}->resultset('Cart')->search({'me.name' => $self->name, 'me.sessions_id' => $args{sessions_id}});
         if ($result->count > 0) {
             $code = $result->next->id;
         }
     }
 
     unless ($code) {
-        $self->{id} = 0;
+        $self->id;
         return;
     }
-    $self->{id} = $code;
+    $self->id($code);
 
     $self->_load_cart($result);
+}
+
+sub load_saved_products {
+    my ($self, %args) = @_;
+    my ($uid, $result, $code);
+
+    # should not be called unless user is logged in
+    return unless $self->users_id;
+
+    # grab the resultset for current cart so we can update products easily if
+    # we find old saved cart products
+
+    my $current_cart_rs = $self->{sqla}->resultset('Cart')->search(
+        {
+            'me.name'        => $self->name,
+            'me.users_id'    => $self->users_id,
+            'me.sessions_id' => $self->sessions_id,
+        }
+    )->search_related(
+        'CartProduct',
+        {},
+    );
+
+    # now find old carts and see if they have products we should move into
+    # our new cart + remove the old carts as we go
+
+    $result = $self->{sqla}->resultset('Cart')->search(
+        {
+            'me.name'        => $self->name,
+            'me.users_id'    => $self->users_id,
+            'me.sessions_id' => [ undef, { '!=', $self->sessions_id }],
+        }
+    );
+
+    while ( my $cart = $result->next ) {
+
+        my $related = $cart->search_related(
+            'CartProduct',
+            {},
+            {
+                join => 'Product',
+                prefetch => 'Product',
+            }
+        );
+        while ( my $record = $related->next ) {
+
+            # look for this sku in our current cart
+
+            my $new_rs = $current_cart_rs->search(
+                { sku => $record->sku }
+            );
+
+            if ( $new_rs->count > 0 ) {
+
+                # we have this sku in our new cart so update quantity
+                my $product = $new_rs->next;
+                $product->update(
+                    {
+                        quantity => $product->quantity + $record->quantity
+                    }
+                );
+            }
+            else {
+
+                # move product into new cart
+                $record->update({ carts_id => $self->id });
+            }
+        }
+
+        # delete the old cart (cascade deletes related cart products)
+        $cart->delete;
+    }
+
 }
 
 =head2 id
@@ -89,24 +168,24 @@ Return cart identifier.
 
 =cut
 
-sub id {
-    my $self = shift;
+around id => sub {
+    my ( $orig, $self, $id ) = @_;
 
-    if (@_ && defined ($_[0])) {
-        my $id = $_[0];
-
-        if ($id =~ /^[0-9]+$/) {
-            $self->{id} = $id;
-            $self->_load_cart;
-        }
+    if ($id && defined($id) && $id =~ /^[0-9]+$/) {
+        $id = $orig->($self, $id);
     }
-    elsif (! $self->{id}) {
-        # forces us to create entry in cart table
+    else {
+        $id = $orig->($self);
+    }
+    unless ( $id ) {
+
+        # still no id - must be no cart so create one
         $self->_create_cart;
+        $id = $orig->($self);
     }
 
-    return $self->{id};
-}
+    return $id;
+};
 
 =head2 save
 
@@ -126,26 +205,26 @@ sub _create_cart {
     %cart = (name => $self->name,
              created => $self->created,
              last_modified => $self->last_modified,
-             sessions_id => $self->{session_id},
+             sessions_id => $self->sessions_id,
              );
 
-    if (defined $self->{users_id}) {
-        $cart{users_id} = $self->{users_id};
+    if (defined $self->users_id) {
+        $cart{users_id} = $self->users_id;
     }
 
     my $rs = resultset('Cart')->create(\%cart);
     
     Dancer::Logger::debug("New cart: ", $rs->id, " => ", \%cart);
 
-    $self->{id} = $rs->id;
+    $self->id($rs->id);
 }
 
 # loads cart from database
 sub _load_cart {
     my ($self, $result) = @_;
-    my ($record, @items);
+    my ($record, %products, @products);
 
-    # retrieve items from database
+    # retrieve products from database
     my $related = $result->search_related('CartProduct',
                                           {},
                                           {
@@ -155,90 +234,91 @@ sub _load_cart {
         ;
 
     while (my $record = $related->next) {
-        push @items, {sku => $record->Product->sku,
-                      name => $record->Product->name,
-                      price => $record->Product->price,
-                      uri => $record->Product->uri,
-                      quantity => $record->quantity,
-                      };
+        push @products, {
+            sku      => $record->sku,
+            name     => $record->Product->name,
+            price    => $record->Product->price,
+            quantity => $record->quantity,
+        };
     }
 
-    $self->seed(\@items);
+    $self->seed(\@products);
 }
 
 sub _find_and_update {
-    my ($self, $sku, $new_item) = @_;
+    my ($self, $sku, $new_product) = @_;
 
     my $cp = $self->{sqla}->resultset('CartProduct')->find({carts_id => $self->{id},
                                                             sku => $sku});
 
-    $cp->update($new_item);
+    $cp->update($new_product);
 }
 
 
 # hook methods
 sub _after_cart_add {
     my ($self, @args) = @_;
-    my ($item, $update, $record);
+    my ($product, $update, $record);
 
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
     }
 
-    $item = $args[1];
+    $product = $args[1];
     $update = $args[2];
 
-    unless ($self->{id}) {
+    unless ($self->id) {
         $self->_create_cart;
     }
 
-    # first check whether item exists
-    if (! resultset('Product')->find($item->{sku})) {
-        $self->{error} = ("Item $item->{sku} doesn't exist.");
+    # first check whether product exists
+    if (! resultset('Product')->find($product->{sku})) {
+        $self->set_error("Item $product->{sku} doesn't exist.");
         return;
     }
 
     if ($update) {
-        # update item in database
-        $record = {quantity => $item->{quantity}};
-        $self->_find_and_update($item->{sku}, $record);
+        # update product in database
+        $record = {quantity => $product->quantity};
+        $self->_find_and_update($product->sku, $record);
     }
     else {
-        # add new item to database
-        $record = {carts_id => $self->{id}, sku => $item->{sku}, quantity => $item->{quantity}, cart_position => 0};
+        # add new product to database
+        $record = {carts_id => $self->id, sku => $product->{sku}, quantity => $product->{quantity}, cart_position => 0};
         resultset('CartProduct')->create($record);
     }
 }
 
 sub _after_cart_update {
     my ($self, @args) = @_;
-    my ($item, $new_item, $count);
+    my ($product, $new_product, $count);
 
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
     }
 
-    $item = $args[1];
-    $new_item = $args[2];
+    $product = $args[1];
+    $new_product = $args[2];
 
-    $self->_find_and_update($item->{sku}, $new_item);
+    $self->_find_and_update($product->{sku}, $new_product);
+    #session products => $self->products;
 }
 
 sub _after_cart_remove {
     my ($self, @args) = @_;
-    my ($item);
+    my ($product);
 
     unless ($self eq $args[0]) {
 	# not our cart
 	return;
     }
 
-    $item = $args[1];
+    $product = $args[1];
 
      my $cp = $self->{sqla}->resultset('CartProduct')->find({carts_id => $self->{id},
-                                                            sku => $item->{sku}});
+                                                            sku => $product->{sku}});
     $cp->delete;
 }
 
@@ -262,7 +342,7 @@ sub _after_cart_clear {
     }
 
     # delete all products from this cart
-    my $rs = $self->{sqla}->resultset('Cart')->search({'CartProduct.carts_id' => $self->{id}}, {join => 'CartProduct'})->delete_all;
+    my $rs = $self->{sqla}->resultset('Cart')->search({'CartProduct.carts_id' => $self->id}, {join => 'CartProduct'})->delete_all;
 }
 
 sub _after_cart_set_users_id {
@@ -274,14 +354,14 @@ sub _after_cart_set_users_id {
     }
 
     # skip if cart is not yet stored in the database
-    return unless $self->{id};
+    return unless $self->id;
 
     # change users_id
     my $data = $args[1];
 
-    Dancer::Logger::debug("Change users_id of $self->{id} to: ", $data);
+    Dancer::Logger::debug("Change users_id of $self->id to: ", $data);
 
-    $self->{sqla}->resultset('Cart')->find($self->{id})->update($data);
+    $self->{sqla}->resultset('Cart')->find($self->id)->update($data);
 }
 
 sub _after_cart_set_sessions_id {

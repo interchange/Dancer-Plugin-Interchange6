@@ -25,8 +25,17 @@ sub cart_route {
 
     return sub {
         my %values;
-        my ($input, $product, $cart_item, $cart_name, $cart_input,
+        my ($input, $product, $cart, $cart_item, $cart_name, $cart_input,
             $cart_product);
+
+        if ($cart_name = param('cart') && scalar($cart_name)) {
+            $cart = cart($cart_name);
+        }
+        else {
+            $cart = cart;
+        }
+
+        debug "cart_route cart name: " . $cart->name;
 
         if ($input = param('sku')) {
             if (scalar($input)) {
@@ -61,25 +70,20 @@ sub cart_route {
                                price => $cart_product->price};
 
                 debug "Cart input: ", $cart_input;
-                if ($cart_name = param('cart')
-                    && scalar($cart_name)) {
-                    $cart_item = cart($cart_name)->add($cart_input);
-                }
-                else {
-                    $cart_item = cart->add($cart_input);
-                }
+
+                $cart_item = $cart->add($cart_input);
 
                 unless ($cart_item) {
-                    warning "Cart error: ", cart->error;
-                    $values{cart_error} = cart->error;
+                    warning "Cart error: ", $cart->error;
+                    $values{cart_error} = $cart->error;
                 }
             }
         }
 
         # add stuff useful for cart display
-        $values{cart} = cart->items;
-        $values{cart_subtotal} = cart->subtotal;
-        $values{cart_total} = cart->total;
+        $values{cart} = $cart->get_products;
+        $values{cart_subtotal} = $cart->subtotal;
+        $values{cart_total} = $cart->total;
 
         # call before_cart_display route so template tokens
         # can be injected

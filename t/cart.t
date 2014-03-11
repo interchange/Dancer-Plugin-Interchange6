@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 40;
+use Test::Most tests => 63;
 use Interchange6::Schema;
 
 use Dancer qw(:tests);
@@ -27,7 +27,7 @@ my $schema = $schema_class->connect( "DBI:SQLite:$filename", '', '',
 
 $schema->deploy;
 
-my ($cart, $item, $name, $ret, $time, $modified);
+my ($cart, $product, $name, $ret, $time, $modified);
 
 set session => 'simple';
 
@@ -54,185 +54,155 @@ ok($ret >= $dt_now, "Testing cart creation time: $ret.");
 $ret = $cart->last_modified;
 ok($ret >= $dt_now, "Testing cart modification time: $ret.");
 
-# Add items for testing
+# Add products for testing
 shop_product->create({sku => 'ABC'});
 shop_product->create({sku => 'DEF'});
 shop_product->create({sku => 'KLM'});
 shop_product->create({sku => '123'});
 
-# Items
+# Products
 $cart = cart('new');
 $modified = $cart->last_modified;
 sleep 1; # so we can check last_modified
-$item = {};
-$ret = $cart->add($item);
-ok(! defined($ret), "Testing empty item.");
-ok($cart->last_modified == $modified, "Testing cart last modified with empty item.")
+$product = {};
+
+throws_ok { $cart->add($product) } qr/Missing required arg/, "add empty product";
+ok($cart->last_modified == $modified, "Testing cart last modified with empty product.")
     || diag "Last modified: " . $cart->last_modified;
 
-$item->{sku} = 'ABC';
-$ret = $cart->add($item);
-ok(! defined($ret), "Testing item with SKU only.");
-ok($cart->last_modified == $modified, "Testing cart last modified with SKU only item.")
+$product->{sku} = 'ABC';
+throws_ok { $cart->add($product) } qr/Missing required arg/, "Tetsing product with SKU only";
+
+ok($cart->last_modified == $modified, "Testing cart last modified with SKU only product.")
     || diag "Last modified: " . $cart->last_modified;
 
-$item->{name} = 'Foobar';
-$ret = $cart->add($item);
-ok(! defined($ret), "Testing item with SKU and name.");
+$product->{name} = 'Foobar';
+throws_ok { $cart->add($product) } qr/Missing required arg/, "Testing product with SKU and name.";
+
 ok($cart->last_modified == $modified, "Testing cart last modified with SKU and name.")
     || diag "Last modified: " . $cart->last_modified;
 
-$item->{price} = '42';
-$ret = $cart->add($item);
-ok(ref($ret) eq 'HASH', "Testing adding correct item.")
+$product->{price} = '42';
+lives_ok { $ret = $cart->add($product) } "Testing adding correct product."
     || diag "Cart error: $cart->error";
-ok($cart->last_modified >= $modified, "Check for update on last modified value.");
-$ret = $cart->items();
-ok(@$ret == 1, "Check number of items in the cart is one")
-    || diag "Items: $ret";
+isa_ok ( $ret, 'Interchange6::Cart::Product' );
+cmp_ok ( $ret->sku, 'eq', 'ABC', "Check sku of returned product" );
+cmp_ok ( $ret->name, 'eq', 'Foobar', "Check name of returned product" );
+cmp_ok ( $ret->price, '==', 42, "Check price of returned product" );
+cmp_ok ( $ret->quantity, '==', 1, "Check quantity of returned product" );
 
-# Combine items
-$item = {sku => 'ABC', name => 'Foobar', price => 5};
-$ret = $cart->add($item);
-ok(ref($ret) eq 'HASH', $cart->error);
+cmp_ok($cart->last_modified, '>=', $modified, "Check for update on last modified value.");
+cmp_ok($cart->count, '==', 1, "Check number of products in the cart is 1");
 
-$ret = $cart->items;
-ok(@$ret == 1, "Items: $ret");
+# Combine products
+$product = {sku => 'ABC', name => 'Foobar', price => 5};
+lives_ok { $ret = $cart->add($product) } "Add another product to cart with same SKU";
+isa_ok ( $ret, 'Interchange6::Cart::Product' );
+cmp_ok($cart->count, '==', 1, "Check number of products in the cart is 1");
 
-$item = {sku => 'DEF', name => 'Foobar', price => 5};
-$ret = $cart->add($item);
-ok(ref($ret) eq 'HASH', $cart->error);
+$product = {sku => 'DEF', name => 'Foobar', price => 5};
+lives_ok { $ret = $cart->add($product) } "Add a different product to cart";
+isa_ok ( $ret, 'Interchange6::Cart::Product' );
+cmp_ok($cart->count, '==', 2, "Check number of products in the cart is 2");
 
-$ret = $cart->items;
-ok(@$ret == 2, "Items: $ret");
+# Update product(s)
+lives_ok { $cart->update(ABC => 2) } "Change quantity of ABC to 2";
+cmp_ok($cart->count, '==', 2, "Testing count after update of ABC.");
 
-# Update item(s)
-$cart->update(ABC => 2);
+cmp_ok($cart->quantity, '==', 3, "Testing quantity after update of ABC.");
 
-$ret = $cart->count;
-ok($ret == 2, "Testing count after update of ABC.")
-    || diag "Count: $ret";
+lives_ok { $cart->update(ABC => 1, DEF => 4) } "Update qty of ABC and DEF";
+cmp_ok($cart->count, '==', 2, "Testing count after update of ABC and DEF.");
+cmp_ok($cart->quantity, '==', 5, "Testing quantity after update of ABC and DEF.");
 
-$ret = $cart->quantity;
-ok($ret == 3, "Testing quantity after update of ABC.")
-   || diag "Quantity: $ret";
-
-$cart->update(ABC => 1, DEF => 4);
-
-$ret = $cart->count;
-ok($ret == 2, "Testing count after update of ABC and DEF.")
-   || diag "Count: $ret";
-
-$ret = $cart->quantity;
-ok($ret == 5, "Testing quantity after update of ABC and DEF.")
-   || diag "Quantity: $ret";
-
-$cart->update(ABC => 0);
-
-$ret = $cart->count;
-ok($ret == 1, "Testing count after update of ABC to 0.")
-   || diag "Count: $ret";
-
-$ret = $cart->quantity;
-ok($ret == 4, "Testing quantity after update of ABC to 0.")
-   || diag "Quantity: $ret";
+lives_ok { $cart->update(ABC => 0) } "Update quantity of ABC to 0.";
+cmp_ok($cart->count, '==', 1, "Testing count after update of ABC to 0.");
+cmp_ok($cart->quantity, '==', 4, "Testing quantity after update of ABC to 0.");
 
 # Cart removal
+lives_ok {
 hook before_cart_remove => sub {
-    my ($cart, $item) = @_;
+    my ($cart, $product) = @_;
 
-    if ($item->{sku} eq '123') {
-        $item->{error} = 'Item not removed due to hook.';
+    if ($product->{sku} eq '123') {
+        $cart->set_error('Product not removed due to hook.');
     }
-};
+}
+} "Add before_cart_remove hook";
 
-$item = {sku => 'DEF', name => 'Foobar', price => 5};
-$ret = $cart->add($item);
+$product = {sku => 'DEF', name => 'Foobar', price => 5};
+lives_ok { $cart->add($product) } "Add product DEF";
 
-$item = {sku => '123', name => 'Foobar', price => 5};
-$ret = $cart->add($item);
+$product = {sku => '123', name => 'Foobar', price => 5};
+lives_ok { $cart->add($product) } "Add product 123";
 
-$ret = $cart->remove('123');
-ok($cart->error eq 'Item not removed due to hook.',
-   "Test removal prevented by hook")
-   || diag "Cart Error: " . $cart->error;
+cmp_ok($cart->count, '==', 2, "Testing count is 2.");
 
-$ret = $cart->items;
-ok(@$ret == 2, "Items: $ret");
+lives_ok { $cart->remove('123') } "Try to remove product 123";
+cmp_ok($cart->error, 'eq', 'Product not removed due to hook.',
+   "Test removal prevented by hook");
 
-$ret = $cart->remove('DEF');
-ok(defined($ret), "Item DEF removed from cart.");
+cmp_ok($cart->count, '==', 2, "Testing count is still 2.");
 
-$ret = $cart->items;
-ok(@$ret == 1, "List of items after removal of DEF")
-    || diag "Items: " . Dumper($ret);
+lives_ok { $cart->remove('DEF') } "Try to remove product DEF";
 
+cmp_ok($cart->count, '==', 1, "Testing count after removal of DEF.");
 
 # Calculating total
-$cart->clear;
-$ret = $cart->total;
-ok($ret == 0, "Total: $ret");
+lives_ok { $cart->clear } "Clear cart";
+cmp_ok( $cart->total, '==', 0, "Cart total is 0" );
 
-$item = {sku => 'GHI', name => 'Foobar', price => 2.22, quantity => 3};
-$ret = $cart->add($item);
-ok(ref($ret) eq 'HASH', "Adding item GHI.")
-    || diag "Cart error: " . $cart->error;
+$product = {sku => 'GHI', name => 'Foobar', price => 2.22, quantity => 3};
+lives_ok { $ret = $cart->add($product) } "Add product GHI";
+isa_ok ( $ret, 'Interchange6::Cart::Product' );
 
-$ret = $cart->total;
-ok($ret == 6.66, "Cart total for 3 pieces of GHI.")
-    || diag "Total: $ret";
+cmp_ok($cart->total, '==', 6.66, "Cart total for 3 pieces of GHI.");
 
-$item = {sku => 'KLM', name => 'Foobar', price => 3.34, quantity => 1};
-$ret = $cart->add($item);
-ok(ref($ret) eq 'HASH', "Adding item KLM.")
-    || diag "Cart error: " . $cart->error;
+$product = {sku => 'KLM', name => 'Foobar', price => 3.34, quantity => 1};
+lives_ok { $ret = $cart->add($product) } "Add product KLM";
+isa_ok ( $ret, 'Interchange6::Cart::Product' );
 
-$ret = $cart->total;
-ok($ret == 10, "Cart total for GHI and KLM")
-    || diag "Total: $ret";
+cmp_ok( $cart->total, '==', 10, "Cart total for GHI and KLM");
 
 # Hooks
+lives_ok {
 hook 'before_cart_add' => sub {
-    my ($cart, $item) = @_;
+    my ($cart, $product) = @_;
 
-    if ($item->{price} > 3) {
-        $item->{error} = 'Test error';
+    if ($product->{price} > 3) {
+        $cart->set_error('Test error');
     }
-};
+}
+} "Add price > 3 hook";
 
-$cart->clear;
-$item = {sku => 'KLM', name => 'Foobar', price => 3.34, quantity => 1};
-$ret = $cart->add($item);
+lives_ok { $cart->clear } "Clear cart";
 
-$ret = $cart->items;
-ok(@$ret == 0, "Cart after adding KLM")
-    || diag "Items: " . Dumper($ret);
+$product = {sku => 'KLM', name => 'Foobar', price => 3.34, quantity => 1};
+lives_ok { $ret = $cart->add($product) } "Add product with proce 3.34";
 
-ok($cart->error eq 'Test error', "Checking cart error")
-    || diag "Cart error: " . $cart->error;
+cmp_ok($cart->count, '==', 0, "Cart after adding KLM is empty");
+
+cmp_ok($cart->error, 'eq', 'Test error', "Checking cart error");
 
 # Seed
-$cart = cart;
-$cart->seed([{sku => 'ABC', name => 'ABC', price => 2, quantity => 1},
+
+lives_ok { $cart = cart } "Create a new cart";
+
+lives_ok { $cart->seed([{sku => 'ABC', name => 'ABC', price => 2, quantity => 1},
 	     {sku => 'ABCD', name => 'ABCD', price => 3, quantity => 2},
-	    ]);
+	    ])
+} "Seed cart";
 
-$ret = $cart->items;
-ok(@$ret == 2, "Items: $ret");
+cmp_ok($cart->count, '==', 2, "2 products in cart");
 
-$ret = $cart->count;
-ok($ret == 2, "Count: $ret");
+cmp_ok($cart->quantity, '==', 3, "Quantity is 3");
 
-$ret = $cart->quantity;
-ok($ret == 3, "Quantity: $ret");
+cmp_ok($cart->total, '==', 8, "Total is 8");
 
-$ret = $cart->total;
-ok($ret == 8, "Total: $ret");
+lives_ok { $cart->clear } "Clear cart";
 
-$cart->clear;
+cmp_ok($cart->count, '==', 0, "0 products in cart");
 
-$ret = $cart->count;
-ok($ret == 0, "Count: $ret");
+cmp_ok($cart->quantity, '==', 0, "Quantity is 0");
 
-$ret = $cart->quantity;
-ok($ret == 0, "Quantity: $ret");
+done_testing;
