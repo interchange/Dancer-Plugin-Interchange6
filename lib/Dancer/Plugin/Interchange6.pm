@@ -10,6 +10,7 @@ use Dancer::Plugin::Auth::Extensible;
 
 use Interchange6::Class;
 use Interchange6::Cart;
+use Dancer::Plugin::Interchange6::Cart::DBIC;
 use Dancer::Plugin::Interchange6::Business::OnlinePayment;
 
 =head1 NAME
@@ -314,7 +315,7 @@ sub _shop_cart {
         $name = $_[0];
     }
 
-    $cart = Interchange6::Class->instantiate('Dancer::Plugin::Interchange6::Cart::DBIC',
+    $cart = Dancer::Plugin::Interchange6::Cart::DBIC->new(
                                        name => $name,
                                        sessions_id => session->id,
                                        execute_hook => sub {execute_hook(@_)},
