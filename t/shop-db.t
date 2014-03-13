@@ -54,7 +54,7 @@ for my $testdb (@handles) {
 
     set plugins => {DBIC => {$driver => {dsn => $connection_info[0],
                                          user => $connection_info[1],
-                                         pass => $connection_info[2],
+                                         password => $connection_info[2],
                                      schema_class => 'Interchange6::Schema'}
                         }
                };
