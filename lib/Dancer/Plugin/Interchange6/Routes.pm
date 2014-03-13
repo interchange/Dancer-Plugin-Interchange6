@@ -13,7 +13,9 @@ Dancer::Plugin::Interchange6::Routes - Routes for Interchange6 Shop Machine
 
 =head2 ROUTES
 
-The following routes are automatically created by this plugin:
+The following routes are provided by this plugin.
+
+Active routes are automatically installed by the C<shop_setup_routes> keyword:
 
 =over 4
 
@@ -23,7 +25,7 @@ Route for displaying and updating the cart.
 
 =item checkout (C</checkout>)
 
-Route for the checkout process.
+Route for the checkout process (not B<active> and not recommended).
 
 =item login (C</login>)
 

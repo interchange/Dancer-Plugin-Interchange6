@@ -12,6 +12,10 @@ Dancer::Plugin::Interchange6::Routes::Checkout - Checkout routes for Interchange
 
 register_hook 'before_checkout_display';
 
+=head1 DESCRIPTION
+
+This route isn't active by default and B<not recommended>.
+
 =head1 FUNCTIONS
 
 =head2 checkout_route
