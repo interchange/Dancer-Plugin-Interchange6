@@ -8,7 +8,6 @@ use Dancer::Plugin;
 use Dancer::Plugin::DBIC;
 use Dancer::Plugin::Auth::Extensible;
 
-use Interchange6::Class;
 use Interchange6::Cart;
 use Dancer::Plugin::Interchange6::Cart::DBIC;
 use Dancer::Plugin::Interchange6::Business::OnlinePayment;
