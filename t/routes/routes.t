@@ -12,6 +12,7 @@ use warnings;
 
 use Test::Most tests => 67;
 
+use DBD::SQLite;
 use File::Spec;
 use Data::Dumper;
 use File::Temp 'tempfile';
@@ -23,6 +24,8 @@ use Interchange6::Schema::Populate::CountryLocale;
 
 use Dancer qw/:tests/;
 use Dancer::Plugin::Interchange6;
+
+diag( "Testing with DBD::SQLite $DBD::SQLite::VERSION" );
 
 my ( $filename, $resp, $sessionid, %form );
 
