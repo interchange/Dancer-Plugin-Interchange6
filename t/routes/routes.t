@@ -12,6 +12,7 @@ use warnings;
 
 use Test::Most tests => 67;
 
+use DBD::SQLite;
 use File::Spec;
 use Data::Dumper;
 use File::Temp 'tempfile';
@@ -23,6 +24,8 @@ use Interchange6::Schema::Populate::CountryLocale;
 
 use Dancer qw/:tests/;
 use Dancer::Plugin::Interchange6;
+
+diag( "Testing with DBD::SQLite $DBD::SQLite::VERSION" );
 
 my ( $filename, $resp, $sessionid, %form );
 
@@ -59,7 +62,7 @@ shop_product->create(
     {
         sku               => 'BAN001',
         name              => 'bananas',
-        price             => '5.34',
+        price             => 5.34,
         uri               => 'kilo-of-bananas',
         short_description => 'Fresh bananas from Colombia',
         description       => 'The best bananas money can buy',
@@ -70,7 +73,7 @@ shop_product->create(
     {
         sku               => 'ORA001',
         name              => 'oranges',
-        price             => '6.45',
+        price             => 6.45,
         uri               => 'kilo-of-oranges',
         short_description => 'California oranges',
         description       => 'Organic California navel oranges',
@@ -81,7 +84,7 @@ shop_product->create(
     {
         sku               => 'CAR002',
         name              => 'carrots',
-        price             => '3.23',
+        price             => 3.23,
         uri               => 'kilo-of-carrots',
         short_description => 'Local carrots',
         description       => 'Carrots from our local organic farm',
@@ -92,7 +95,7 @@ shop_product->create(
     {
         sku               => 'POT002',
         name              => 'potatoes',
-        price             => '10.15',
+        price             => 10.15,
         uri               => 'kilo-of-potatoes',
         short_description => 'Maltese potatoes',
         description       => 'The best new potatoes in the world',
