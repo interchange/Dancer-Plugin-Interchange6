@@ -1,5 +1,22 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.019 Sat Mar 22 19:27:39 2014 CET
+
+    [ENHANCEMENTS]
+
+    * Add support for paging to navigation routes.
+
+    [TESTS]
+
+    * Add DBD::SQLite driver version to routes test report (Peter Mottram).
+    * Change price values from decimal string to float in routes test
+      (Peter Mottram).
+    * Pass option deprecated in Dancer::Plugin::DBIC (Peter Mottram).
+
+    [BUG FIXES]
+
+    * Remove Interchange6::Class dependency (GH #16, Peter Mottram).
+
 0.010 Wed Mar 12 18:24:02 2014 CET
 
     [ENHANCEMENTS]

@@ -2,7 +2,7 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.010
+    Version 0.019
 
 REQUIREMENTS
     All Interchange6 Dancer applications need to use the
