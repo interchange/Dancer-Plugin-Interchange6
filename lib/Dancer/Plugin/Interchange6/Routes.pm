@@ -40,6 +40,14 @@ Logout route.
 Route for displaying navigation pages, for example
 categories and menus.
 
+The number of products shown on the navigation page can
+be configured with the C<records> option:
+
+  plugins:
+    Interchange6::Routes:
+      navigation:
+        records: 20
+
 =item product
 
 Route for displaying products.
@@ -70,6 +78,7 @@ The template for each route type can be configured:
           active: 0
         navigation:
           template: listing
+          records: 0
         product:
           template: product
 
@@ -120,25 +129,30 @@ register shop_setup_routes => sub {
 register_hook (qw/before_product_display before_navigation_display/);
 register_plugin;
 
+our $object_autodetect = 0;
+
 our %route_defaults = (
-                       account => {login => {template => 'login',
-                                             uri => 'login',
-                                             success_uri => '',
-                                            },
-                                   logout => {template => 'logout',
-                                              uri => 'logout',
-                                             },
-                                  },
-                       cart => {template => 'cart',
-                                uri => 'cart',
-                                active => 1,
-                            },
-                       checkout => {template => 'checkout',
-                                    uri => 'checkout',
-                                    active => 0,
-                                },
-                       navigation => {template => 'listing'},
-                       product => {template => 'product'});
+    account => {login => {template => 'login',
+                          uri => 'login',
+                          success_uri => '',
+                      },
+                logout => {template => 'logout',
+                           uri => 'logout',
+                       },
+            },
+    cart => {template => 'cart',
+             uri => 'cart',
+             active => 1,
+         },
+    checkout => {template => 'checkout',
+                 uri => 'checkout',
+                 active => 0,
+             },
+    navigation => {template => 'listing',
+                   records => 0,
+               },
+    product => {template => 'product'},
+);
 
 sub _setup_routes {
     my $sub;
@@ -146,6 +160,14 @@ sub _setup_routes {
 
     # update settings with defaults
     my $routes_config = _config_routes($plugin_config, \%route_defaults);
+
+    # display warnings
+    _config_warnings($routes_config);
+
+    # check whether template engine has object autodetect
+    if (config->{template} eq 'template_flute') {
+        $object_autodetect = 1;
+    }
 
     # account routes
     my $account_routes = Dancer::Plugin::Interchange6::Routes::Account::account_routes($routes_config);
@@ -228,6 +250,16 @@ sub _setup_routes {
             }
         }
 
+        # check for page number
+        my $page;
+
+        if ($path =~ s%/([1-9][0-9]*)$%%) {
+            $page = $1;
+        }
+        else {
+            $page = 1;
+        }
+
         # first check for navigation item
         my $navigation_result = shop_navigation->search({uri => $path});
 
@@ -238,17 +270,40 @@ sub _setup_routes {
         if ($navigation_result == 1) {
             # navigation item found
             my $nav = $navigation_result->next;
-            # retrieve related products
-            my $nav_products = $nav->search_related('NavigationProduct')->search_related('Product', {active => 1});
+
+            # search parameters
+            my $search_args = {
+                conditions => {
+                    # only active items
+                    active => 1,
+                },
+                attributes => {
+                    rows => $routes_config->{navigation}->{records},
+                    page => $page},
+            };
 
             my $products;
 
-            while (my $rec = $nav_products->next) {
-                push @$products, $rec;
+            my $nav_products = $nav->search_related('NavigationProduct')->search_related(
+                'Product',
+                $search_args->{conditions},
+                $search_args->{attributes},
+            );
+
+            if ($object_autodetect) {
+                $products = $nav_products;
+            }
+            else {
+                while (my $rec = $nav_products->next) {
+                    push @$products, $rec;
+                    next if @$products > 200;
+                }
             }
 
             my $tokens = {navigation => $nav,
                           products => $products,
+                          count => $nav_products->count,
+                          pager => $nav_products->pager,
                          };
 
             execute_hook('before_navigation_display', $tokens);
@@ -281,6 +336,14 @@ sub _config_routes {
     }
 
     return $settings;
+}
+
+sub _config_warnings {
+    my ($settings) = @_;
+
+    if ($settings->{navigation}->{records} == 0) {
+        warn __PACKAGE__, ": Maximum number of navigation records is zero.\n";
+    }
 }
 
 1;
