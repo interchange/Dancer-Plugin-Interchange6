@@ -299,6 +299,8 @@ register shop_charge => sub {
     else {
         $payment_order->update({
             status => 'failure',
+	    payment_error_code => $bop_object->error_code,
+	    payment_error_message => $bop_object->error_message,
         });
     }
 

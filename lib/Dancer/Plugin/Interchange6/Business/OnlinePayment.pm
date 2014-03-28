@@ -91,6 +91,16 @@ has order_number => (
     is => 'rwp',
 );
 
+=head2 error_code
+
+Returns error code in case of payment failure.
+
+=cut
+
+has error_code => (
+    is => 'rwp',
+);
+
 =head2 error_message
 
 Returns error message in case of payment failure.
@@ -128,6 +138,7 @@ sub charge {
     $self->_set_is_success(0);
     $self->_set_authorization('');
     $self->_set_order_number('');
+    $self->_set_error_code('');
     $self->_set_error_message('');
 
     $provider_settings = $self->provider_args;
@@ -176,8 +187,9 @@ sub charge {
         }
 	}
 	else {
-		debug( 'Card was rejected by ', $self->provider, ': ' , $bop_object->error_message );
-        $self->_set_error_message($bop_object->error_message);
+	    debug( 'Card was rejected by ', $self->provider, ': ' , $bop_object->error_message );
+	    $self->_set_error_code($bop_object->result_code);
+	    $self->_set_error_message($bop_object->error_message);
         return;
 	}
 }
