@@ -1,5 +1,6 @@
 log: core
 logger: capture
+show_errors: 1
 session: simple
 template: simple
 plugins:
