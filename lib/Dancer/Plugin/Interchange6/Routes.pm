@@ -300,7 +300,15 @@ sub _setup_routes {
                 }
             }
 
+            # retrieve navigation attribute for template
+	    my $template = $routes_config->{navigation}->{template};
+
+	    if (my $attr_value = $nav->find_attribute_value('template')) {
+		$template = $attr_value;
+	    }
+
             my $tokens = {navigation => $nav,
+			  template => $template,
                           products => $products,
                           count => $nav_products->count,
                           pager => $nav_products->pager,
@@ -308,7 +316,7 @@ sub _setup_routes {
 
             execute_hook('before_navigation_display', $tokens);
 
-            return template $nav->template || $routes_config->{navigation}->{template}, $tokens;
+            return template $tokens->{template}, $tokens;
         }
 
         # display not_found page
