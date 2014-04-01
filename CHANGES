@@ -1,5 +1,19 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.020 Tue Apr  1 13:21:37 2014 CEST
+
+    [ENHANCEMENTS]
+
+    * Retrieve template value from navigation attributes
+      (Stefan Hornburg (Racke), GH #19).
+
+    * Save error code and error message from payment failure into payment order
+      (Stefan Hornburg (Racke)).
+
+    [TESTS]
+
+    * Enable show_errors in configuration for route tests (Stefan Hornburg (Racke)).
+
 0.019 Sat Mar 22 19:27:39 2014 CET
 
     [ENHANCEMENTS]
