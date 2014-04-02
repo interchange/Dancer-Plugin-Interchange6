@@ -37,6 +37,11 @@ sub cart_route {
 
         debug "cart_route cart name: " . $cart->name;
 
+	if (param('remove')) {
+	    # removing item from cart
+	    $cart->remove(param('remove'));
+	}
+
         if ($input = param('sku')) {
             if (scalar($input)) {
                 $product = shop_product($input);
