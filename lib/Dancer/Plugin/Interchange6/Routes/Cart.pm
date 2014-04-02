@@ -74,6 +74,10 @@ sub cart_route {
                                name => $cart_product->name,
                                price => $cart_product->price};
 
+		if (param('quantity')) {
+		    $cart_input->{quantity} = param('quantity');
+		}
+
                 debug "Cart input: ", $cart_input;
 
                 $cart_item = $cart->add($cart_input);
