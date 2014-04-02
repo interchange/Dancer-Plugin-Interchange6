@@ -1,5 +1,13 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.021 Wed Apr  2 09:07:12 2014 CEST
+
+    [ENHANCEMENTS]
+
+    * Use quantity parameter from user input for cart add action.
+
+    * Add remove action to cart route.
+
 0.020 Tue Apr  1 13:21:37 2014 CEST
 
     [ENHANCEMENTS]
