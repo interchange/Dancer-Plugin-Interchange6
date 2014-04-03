@@ -3,13 +3,13 @@
 use strict;
 use warnings;
 
-#use Test::Most 'die', tests => 63;
-use Test::Most 'die';
+use Test::Most 'die', tests => 83;
 
 use Interchange6::Schema;
 use Dancer qw(:tests);
 use Dancer::Plugin::Interchange6;
 use DBICx::TestDatabase;
+use Dancer::Test;
 
 use Data::Dumper;
 use DateTime;
@@ -19,8 +19,7 @@ my $dt_now = DateTime->now;
 
 my $filename;
 
-#( undef, $filename ) = tempfile;
-$filename = "testdb";
+( undef, $filename ) = tempfile;
 
 my $schema_class = 'Interchange6::Schema';
 
@@ -31,7 +30,7 @@ my $schema =
 
 $schema->deploy;
 
-my ( $cart, $product, $name, $ret, $time, $modified );
+my ( $cart, $product, $name, $ret, $time, $modified, $i );
 
 set session => 'simple';
 
@@ -45,13 +44,19 @@ set plugins => {
 };
 
 set log    => 'debug';
-set logger => 'console';
+set logger => 'capture';
 
 # Get / set cart name
 $cart = cart;
 
 cmp_ok($schema->resultset('Cart')->count, '==', 1, "1 cart in the database");
 cmp_ok($cart->id, '==', 1, "cart id is 1");
+
+cmp_deeply(
+    read_logs,
+    [ { level => "debug", message => "New cart 1 main." } ],
+    "Check cart BUILDARGS debug message"
+);
 
 $name = $cart->name;
 ok( $name eq 'main', "Testing default name." );
@@ -79,9 +84,17 @@ sleep 1;    # so we can check last_modified
 $product = {};
 
 cmp_ok($cart->id, '==', 2, "cart id is 2");
+
+cmp_deeply(
+    read_logs,
+    [ { level => "debug", message => "New cart 2 new." } ],
+    "Check cart BUILDARGS debug message"
+);
+
 $ret = $schema->resultset('Cart')->search({},{order_by => 'carts_id'});
 cmp_ok($ret->count, '==', 2, "2 carts in the database");
-my $i = 0;
+
+$i = 0;
 while ( my $rec = $ret->next ) {
     cmp_ok($rec->carts_id, 'eq', ++$i, "cart id is: " . $i);
     if ( $i == 1 ) {
@@ -91,7 +104,6 @@ while ( my $rec = $ret->next ) {
         cmp_ok( $rec->name, 'eq', 'new', "Cart 2 name is new" );
     }
 }
-
 
 throws_ok { $cart->add($product) } qr/Missing required arg/,
   "add empty product";
@@ -111,8 +123,6 @@ $product->{name} = 'Foobar';
 throws_ok { $cart->add($product) } qr/Missing required arg/,
   "Testing product with SKU and name.";
 
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
-
 ok( $cart->last_modified == $modified,
     "Testing cart last modified with SKU and name." )
   || diag "Last modified: " . $cart->last_modified;
@@ -130,8 +140,6 @@ cmp_ok( $cart->last_modified, '>=', $modified,
     "Check for update on last modified value." );
 cmp_ok( $cart->count, '==', 1, "Check number of products in the cart is 1" );
 
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
-
 # Combine products
 $product = { sku => 'ABC', name => 'Foobar', price => 5 };
 lives_ok { $ret = $cart->add($product) }
@@ -143,8 +151,6 @@ $product = { sku => 'DEF', name => 'Foobar', price => 5 };
 lives_ok { $ret = $cart->add($product) } "Add a different product to cart";
 isa_ok( $ret, 'Interchange6::Cart::Product' );
 cmp_ok( $cart->count, '==', 2, "Check number of products in the cart is 2" );
-
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
 
 # Update product(s)
 lives_ok { $cart->update( ABC => 2 ) } "Change quantity of ABC to 2";
@@ -161,8 +167,6 @@ lives_ok { $cart->update( ABC => 0 ) } "Update quantity of ABC to 0.";
 cmp_ok( $cart->count, '==', 1, "Testing count after update of ABC to 0." );
 cmp_ok( $cart->quantity, '==', 4,
     "Testing quantity after update of ABC to 0." );
-
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
 
 # Cart removal
 lives_ok(
@@ -186,8 +190,6 @@ lives_ok { $cart->add($product) } "Add product 123";
 
 cmp_ok( $cart->count, '==', 2, "Testing count is 2." );
 
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
-
 lives_ok { $cart->remove('123') } "Try to remove product 123";
 cmp_ok(
     $cart->error, 'eq',
@@ -197,19 +199,13 @@ cmp_ok(
 
 cmp_ok( $cart->count, '==', 2, "Testing count is still 2." );
 
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
-
 lives_ok { $cart->remove('DEF') } "Try to remove product DEF";
 
 cmp_ok( $cart->count, '==', 1, "Testing count after removal of DEF." );
 
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
-
 # Calculating total
 lives_ok { $cart->clear } "Clear cart";
 cmp_ok( $cart->total, '==', 0, "Cart total is 0" );
-
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
 
 $product = { sku => 'GHI', name => 'Foobar', price => 2.22, quantity => 3 };
 lives_ok { $ret = $cart->add($product) } "Add product GHI";
@@ -217,15 +213,11 @@ isa_ok( $ret, 'Interchange6::Cart::Product' );
 
 cmp_ok( $cart->total, '==', 6.66, "Cart total for 3 pieces of GHI." );
 
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
-
 $product = { sku => 'KLM', name => 'Foobar', price => 3.34, quantity => 1 };
 lives_ok { $ret = $cart->add($product) } "Add product KLM";
 isa_ok( $ret, 'Interchange6::Cart::Product' );
 
 cmp_ok( $cart->total, '==', 10, "Cart total for GHI and KLM" );
-
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
 
 # Hooks
 lives_ok {
@@ -251,10 +243,31 @@ cmp_ok($cart->id, '==', 2, "cart id is 2");
 
 # Seed
 
-cmp_ok($schema->resultset('Cart')->count, '==', 2, "2 carts in the database");
-cmp_ok($cart->id, '==', 1, "cart id is 1");
-
 lives_ok { $cart = cart } "Create a new cart";
+cmp_ok($cart->id, '==', 3, "cart id is 3");
+
+cmp_deeply(
+    read_logs,
+    [ { level => "debug", message => "New cart 3 main." } ],
+    "Check cart BUILDARGS debug message"
+);
+
+$ret = $schema->resultset('Cart')->search({},{order_by => 'carts_id'});
+cmp_ok($ret->count, '==', 3, "3 carts in the database");
+
+$i = 0;
+while ( my $rec = $ret->next ) {
+    cmp_ok($rec->carts_id, 'eq', ++$i, "cart id is: " . $i);
+    if ( $i == 1 ) {
+        cmp_ok( $rec->name, 'eq', 'discount', "Cart 1 name is discount" );
+    }
+    elsif ( $i == 2 ) {
+        cmp_ok( $rec->name, 'eq', 'new', "Cart 2 name is new" );
+    }
+    else {
+        cmp_ok( $rec->name, 'eq', 'main', "Cart 3 name is main" );
+    }
+}
 
 lives_ok {
     $cart->seed(
@@ -277,5 +290,3 @@ lives_ok { $cart->clear } "Clear cart";
 cmp_ok( $cart->count, '==', 0, "0 products in cart" );
 
 cmp_ok( $cart->quantity, '==', 0, "Quantity is 0" );
-
-done_testing;

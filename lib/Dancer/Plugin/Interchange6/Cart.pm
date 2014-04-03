@@ -52,6 +52,8 @@ has '+sessions_id' => ( required => 1, );
 
 =head1 INHERITED METHODS
 
+=head2 get_sessions_id
+
 =head2 BUILDARGS
 
 Sets default values for name, database and sessions_id if not given and loads other attribute values from DB cart. If DB cart does not exist then create new one.
