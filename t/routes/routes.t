@@ -27,7 +27,7 @@ use Dancer::Plugin::Interchange6;
 
 diag( "Testing with DBD::SQLite $DBD::SQLite::VERSION" );
 
-my ( $filename, $resp, $sessionid, %form );
+my ( $filename, $resp, $sessionid, %form, $logs );
 
 ( undef, $filename ) = tempfile;
 
@@ -257,14 +257,16 @@ lives_ok { $resp = dancer_response( POST => '/login', { body => {%form} } ) }
 response_status_is $resp    => 200,            'status is ok';
 response_content_like $resp => qr/Login form/, 'got login page';
 
+$logs = read_logs;
 cmp_deeply(
-    read_logs,
+    $logs,
     [
+        ignore(),
         ignore(),
         { level => "debug", message => "Authentication failed for testuser" }
     ],
     "Check auth failed debug message"
-);
+) || diag Dumper($logs);
 
 # good login
 
@@ -280,9 +282,11 @@ lives_ok { $resp = dancer_response( POST => '/login', { body => {%form} } ) }
 
 response_redirect_location_is $resp => 'http://localhost/', "Redirected to /";
 
+$logs = read_logs;
 cmp_deeply(
-    read_logs,
+    $logs,
     [
+        ignore(),
         ignore(),
         { level => "debug", message => "users accepted user testuser" },
         {
@@ -291,7 +295,7 @@ cmp_deeply(
         }
     ],
     "login successful and users_id set in debug logs"
-);
+) || diag Dumper($logs);
 
 lives_ok { $resp = dancer_response GET => '/sessionid' } "GET /sessionid";
 cmp_ok( $resp->content, 'eq', $sessionid, "Check session id has not changed");
@@ -318,17 +322,19 @@ response_content_like $resp =>
 # logout
 
 read_logs;    # clear logs
-
 lives_ok { $resp = dancer_response GET => '/logout' } "GET /logout";
 response_redirect_location_is $resp => 'http://localhost/', "Redirected to /";
 
+$logs = read_logs;
 cmp_deeply(
-    read_logs,
+    $logs,
     [
+        ignore(),
+        ignore(),
         { level => "debug", message => re('Change sessions_id.+undef') }
     ],
     "Check sessions_id undef debug message"
-);
+) || diag Dumper($logs);
 
 lives_ok { $resp = dancer_response GET => '/sessionid' } "GET /sessionid";
 cmp_ok( $resp->content, 'ne', $sessionid, "Check session id has changed");

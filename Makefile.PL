@@ -7,9 +7,10 @@ WriteMakefile(
     AUTHOR              => q{Stefan Hornburg (Racke) <racke@linuxia.de>},
     VERSION_FROM        => 'lib/Dancer/Plugin/Interchange6.pm',
     ABSTRACT            => 'Dancer Plugin for Interchange6 Open Source Shop Machine',
-    ($ExtUtils::MakeMaker::VERSION >= 6.3002
+    ($ExtUtils::MakeMaker::VERSION >= 6.47
       ? ('LICENSE'=> 'perl')
       : ()),
+    MIN_PERL_VERSION    => '5.014000',
     PL_FILES            => {},
     EXE_FILES           => ['bin/interchange6-expire-sessions'],
     BUILD_REQUIRES      => {
