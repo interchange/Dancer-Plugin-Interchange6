@@ -1,5 +1,12 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.030 Fri Apr  4 20:34:21 2014 CEST
+
+    [ENHANCEMENTS]
+
+    * Extend cart with products id and move it from Cart::DBIC to Cart
+      (Peter Mottram, GH #21).
+
 0.021 Wed Apr  2 09:07:12 2014 CEST
 
     [ENHANCEMENTS]
