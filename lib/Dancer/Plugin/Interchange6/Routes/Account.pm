@@ -42,9 +42,18 @@ sub account_routes {
             $values{error} = "Login failed";
         }
 
+        # record return_url in template tokens
+        if (my $return_url = param('return_url')) {
+            $values{return_url} = $return_url;
+        }
+
         # call before_login_display route so template tokens
         # can be injected
         execute_hook('before_login_display', \%values);
+
+        # record return_url in the session to reuse it in post route
+        session return_url => $values{return_url};
+
         template $routes_config->{account}->{login}->{template}, \%values;
     };
 
