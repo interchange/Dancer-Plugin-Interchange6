@@ -1,5 +1,11 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.031 Tue Apr  8 11:16:55 2014 CEST
+
+    [ENHANCEMENTS]
+
+    * Mimic usage of return_url parameter in Dancer::Plugin::Auth::Extensible.
+
 0.030 Fri Apr  4 20:34:21 2014 CEST
 
     [ENHANCEMENTS]
