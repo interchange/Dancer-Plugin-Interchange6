@@ -284,8 +284,8 @@ sub _setup_routes {
 
             my $products;
 
-            my $nav_products = $nav->search_related('NavigationProduct')->search_related(
-                'Product',
+            my $nav_products = $nav->search_related('navigation_products')->search_related(
+                'product',
                 $search_args->{conditions},
                 $search_args->{attributes},
             );

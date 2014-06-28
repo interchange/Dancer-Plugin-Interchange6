@@ -122,8 +122,8 @@ sub BUILD {
         },
         { key => 'carts_name_sessions_id' }
       )
-      ->search_related( 'CartProduct', {},
-        { join => 'Product', prefetch => 'Product', } );
+      ->search_related( 'cart_products', {},
+        { join => 'product', prefetch => 'product', } );
 
     while ( my $record = $rset->next ) {
 
@@ -131,10 +131,10 @@ sub BUILD {
           {
             cart_products_id => $record->cart_products_id,
             sku              => $record->sku,
-            name             => $record->Product->name,
+            name             => $record->product->name,
             quantity         => $record->quantity,
-            price            => $record->Product->price,
-            uri              => $record->Product->uri,
+            price            => $record->product->price,
+            uri              => $record->product->uri,
           };
     }
 
@@ -188,7 +188,7 @@ sub load_saved_products {
             'me.users_id'    => $self->users_id,
             'me.sessions_id' => $self->sessions_id,
         }
-    )->search_related( 'CartProduct', {}, );
+    )->search_related( 'cart_products', {}, );
 
     # now find old carts and see if they have products we should move into
     # our new cart + remove the old carts as we go
@@ -204,11 +204,11 @@ sub load_saved_products {
     while ( my $cart = $result->next ) {
 
         my $related = $cart->search_related(
-            'CartProduct',
+            'cart_products',
             {},
             {
-                join     => 'Product',
-                prefetch => 'Product',
+                join     => 'product',
+                prefetch => 'product',
             }
         );
         while ( my $record = $related->next ) {
@@ -359,8 +359,8 @@ sub _after_cart_clear {
     # delete all products from this cart
     my $rs =
       schema( $self->database )->resultset('Cart')
-      ->search( { 'CartProduct.carts_id' => $self->id } )
-      ->search_related( 'CartProduct', {} )->delete_all;
+      ->search( { 'cart_products.carts_id' => $self->id } )
+      ->search_related( 'cart_products', {} )->delete_all;
 }
 
 sub _after_cart_set_users_id {
