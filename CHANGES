@@ -1,5 +1,11 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.040 Wed Jul  2 12:27:52 2014 CEST
+
+    [API CHANGES]
+
+    * Update relationships to new naming standards (Peter Mottram, GH #24).
+
 0.031 Tue Apr  8 11:16:55 2014 CEST
 
     [ENHANCEMENTS]
