@@ -72,10 +72,10 @@ $ret = $cart->last_modified;
 ok( $ret >= $dt_now, "Testing cart modification time: $ret." );
 
 # Add products for testing
-shop_product->create( { sku => 'ABC' } );
-shop_product->create( { sku => 'DEF' } );
-shop_product->create( { sku => 'KLM' } );
-shop_product->create( { sku => '123' } );
+shop_product->create( { sku => 'ABC', description => '' } );
+shop_product->create( { sku => 'DEF', description => '' } );
+shop_product->create( { sku => 'KLM', description => '' } );
+shop_product->create( { sku => '123', description => '' } );
 
 # Products
 $cart     = cart('new');
