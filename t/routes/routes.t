@@ -10,7 +10,7 @@
 use strict;
 use warnings;
 
-use Test::Most tests => 67;
+use Test::Most;
 
 use DBD::SQLite;
 use File::Spec;
@@ -222,10 +222,12 @@ response_content_like $resp =>
   qr/cart="BAN001:bananas:1:5.34,POT002:potatoes:1:10.15"/,
   'found bananas & potatoes in cart';
 
+print STDERR Dumper(shop_cart);
+
 # login
 
-# grab session id - we want to make sure it does NOT change on login
-# but that it DOES change after logout
+# grab session id - we want to make sure it DOES change on login
+# as well as on logout
 
 lives_ok { $resp = dancer_response GET => '/sessionid' } "GET /sessionid";
 $sessionid = $resp->content;
@@ -277,8 +279,15 @@ read_logs;    # clear logs
     password => 'mypassword'
 );
 
+lives_ok( sub { session test_data => "FooBar" }, "add data to session" );
+cmp_ok( session('test_data'), 'eq', "FooBar", "data is in session" );
+
 lives_ok { $resp = dancer_response( POST => '/login', { body => {%form} } ) }
 "POST /login with good password";
+
+cmp_ok( session('test_data'), 'eq', "FooBar", "data is in new session" );
+
+print STDERR Dumper(shop_cart);
 
 response_redirect_location_is $resp => 'http://localhost/', "Redirected to /";
 
@@ -289,16 +298,11 @@ cmp_deeply(
         ignore(),
         ignore(),
         { level => "debug", message => "users accepted user testuser" },
-        {
-            level   => "debug",
-            message => re('Change users_id.+to:.+> 1')
-        }
     ],
     "login successful and users_id set in debug logs"
 ) || diag Dumper($logs);
 
-lives_ok { $resp = dancer_response GET => '/sessionid' } "GET /sessionid";
-cmp_ok( $resp->content, 'eq', $sessionid, "Check session id has not changed");
+cmp_ok( session->id, 'ne', $sessionid, "Check session id has changed");
 
 # we should now be able to GET /private
 

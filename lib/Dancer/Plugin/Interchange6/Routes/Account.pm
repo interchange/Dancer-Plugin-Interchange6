@@ -74,6 +74,27 @@ sub account_routes {
         }
 
         if ($success) {
+
+            # mitigate against session fixation attacks
+            # http://owasp.com/index.php/Session_Management_Cheat_Sheet#Renew_the_Session_ID_After_Any_Privilege_Level_Change
+
+            my $old_session_id = session->id;
+            my $session_data = session;
+
+            session->destroy;
+            session->create;
+
+            foreach my $key ( keys %$session_data ) {
+                next if $key eq 'id'; # we don't want the old id
+                session $key => $session_data->{$key};
+            }
+
+            # now we have a new session we need to update cart
+
+            $current_cart->update({ sessions_id => session->id });
+
+            # all done - carry on as normal
+
             session logged_in_user => $user->username;
             session logged_in_user_id => $user->id;
             session logged_in_user_realm => $realm;
