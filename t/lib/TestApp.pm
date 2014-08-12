@@ -10,6 +10,8 @@ use Dancer::Plugin::Interchange6::Routes;
 use Dancer::Plugin::Auth::Extensible;
 use Dancer::Plugin::DBIC;
 
+#print STDERR Dumper(config);
+
 get '/' => sub {
     return 'Home page';
 };
