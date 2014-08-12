@@ -225,6 +225,10 @@ register shop_country => sub {
     _shop_resultset('Country', @_);
 };
 
+register shop_message => sub {
+    _shop_resultset('Message', @_);
+};
+
 register shop_navigation => sub {
     _shop_resultset('Navigation', @_);
 };
