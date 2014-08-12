@@ -17,6 +17,7 @@ WriteMakefile(
                             'Test::Most' => 0,
                             'DBICx::TestDatabase' => 0,
                             'Test::Database' => 0,
+                            'Test::Roo' => 1.004,
                       },
     PREREQ_PM => {
                   'YAML'       => 0,
