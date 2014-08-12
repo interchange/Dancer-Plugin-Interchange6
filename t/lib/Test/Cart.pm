@@ -1,7 +1,5 @@
 package Test::Cart;
 
-use 5.014;
-
 use Test::Most;
 use Test::Roo::Role;
 use Interchange6::Schema;
@@ -34,7 +32,7 @@ test 'cart tests' => sub {
         '==', 1, "1 cart in the database" );
     cmp_ok( $cart->id, '==', 1, "cart id is 1" );
 
-    $log = pop read_logs;
+    $log = pop @{&read_logs};
     cmp_deeply(
         $log,
         { level => "debug", message => "New cart 1 main." },
@@ -68,7 +66,7 @@ test 'cart tests' => sub {
 
     cmp_ok( $cart->id, '==', 2, "cart id is 2" );
 
-    $log = pop read_logs;
+    $log = pop @{&read_logs};
     cmp_deeply(
         $log,
         { level => "debug", message => "New cart 2 new." },
@@ -242,7 +240,7 @@ test 'cart tests' => sub {
     lives_ok { $cart = cart } "Create a new cart";
     cmp_ok( $cart->id, '==', 3, "cart id is 3" );
 
-    $log = pop read_logs;
+    $log = pop @{&read_logs};
     cmp_deeply(
         $log,
         { level => "debug", message => "New cart 3 main." },

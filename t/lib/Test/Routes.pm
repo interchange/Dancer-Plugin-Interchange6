@@ -7,8 +7,6 @@ package Test::Routes;
 # IMPORTANT: these tests cannot live directly under 't' since Dancer merrily
 # trashes appdir under certain circumstances when we live there.
 
-use 5.014;
-
 use Test::Most;
 use Test::Roo::Role;
 use File::Spec;
@@ -207,7 +205,7 @@ test 'route tests' => sub {
     lives_ok { $resp = dancer_response GET => '/CAR002' }
     "GET /CAR002 (product route)";
 
-    $log = pop read_logs;
+    $log = pop @{&read_logs};
     cmp_deeply(
         $log,
         {
@@ -317,7 +315,7 @@ test 'route tests' => sub {
     response_status_is $resp    => 200,            'status is ok';
     response_content_like $resp => qr/Login form/, 'got login page';
 
-    $log = pop read_logs;
+    $log = pop @{&read_logs};
     cmp_deeply(
         $log,
         { level => "debug", message => "Authentication failed for testuser" },
@@ -342,14 +340,14 @@ test 'route tests' => sub {
       "Redirected to /";
 
     my $logs = read_logs;
-    $log = pop $logs;
+    $log = pop @$logs;
     cmp_deeply(
         $log,
         { level => "debug", message => re('Change users_id') },
         "users_id set in debug logs"
     ) || diag Dumper($log);
 
-    $log = pop $logs;
+    $log = pop @$logs;
     cmp_deeply(
         $log,
         { level => "debug", message => "users accepted user testuser" },
@@ -388,7 +386,7 @@ test 'route tests' => sub {
     response_redirect_location_is $resp => 'http://localhost/',
       "Redirected to /";
 
-    $log = pop read_logs;
+    $log = pop @{&read_logs};
     cmp_deeply(
         $log,
         { level => "debug", message => re('Change sessions_id.+undef') },

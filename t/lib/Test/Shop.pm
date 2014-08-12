@@ -1,7 +1,5 @@
 package Test::Shop;
 
-use 5.014;
-
 use Test::Most;
 use Test::Roo::Role;
 use Interchange6::Schema;
