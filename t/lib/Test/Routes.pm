@@ -15,24 +15,24 @@ use File::Spec;
 use Data::Dumper;
 
 use Interchange6::Schema;
-use Interchange6::Schema::Populate::CountryLocale;
 
 use Dancer qw/:tests !after/;
 use Dancer::Plugin::DBIC;
 use Dancer::Plugin::Interchange6;
+use Dancer::Plugin::Interchange6::Routes;
 
 test 'route tests' => sub {
     my $self = shift;
 
-    my ( $resp, $sessionid, %form, $log, @logs );
+    diag "Test::Routes";
 
-    my $logs; # to remove
+    my ( $resp, $sessionid, %form, $log, @logs );
 
     set plugins => {
         DBIC => {
             default => {
                 schema_class => $self->schema_class,
-                connect_info => [$self->connect_info],
+                connect_info => [ $self->connect_info ],
             }
         }
     };
@@ -42,103 +42,153 @@ test 'route tests' => sub {
     set session => 'DBIC';
     set session_options => { schema => $schema, };
 
-    lives_ok { $schema->deploy } "Deploy schema";
+    #lives_ok { $schema->deploy } "Deploy schema";
 
     use TestApp;
     use Dancer::Test;
 
-    # now add some db content
+    # add some stuff to db
 
-    shop_product->create(
-        {
-            sku               => 'BAN001',
-            name              => 'bananas',
-            price             => 5.34,
-            uri               => 'kilo-of-bananas',
-            short_description => 'Fresh bananas from Colombia',
-            description       => 'The best bananas money can buy',
-            active            => 1,
-        }
-    );
-    shop_product->create(
-        {
-            sku               => 'ORA001',
-            name              => 'oranges',
-            price             => 6.45,
-            uri               => 'kilo-of-oranges',
-            short_description => 'California oranges',
-            description       => 'Organic California navel oranges',
-            active            => 1,
-        }
-    );
-    shop_product->create(
-        {
-            sku               => 'CAR002',
-            name              => 'carrots',
-            price             => 3.23,
-            uri               => 'kilo-of-carrots',
-            short_description => 'Local carrots',
-            description       => 'Carrots from our local organic farm',
-            active            => 1,
-        }
-    );
-    shop_product->create(
-        {
-            sku               => 'POT002',
-            name              => 'potatoes',
-            price             => 10.15,
-            uri               => 'kilo-of-potatoes',
-            short_description => 'Maltese potatoes',
-            description       => 'The best new potatoes in the world',
-            active            => 1,
-        }
+    lives_ok(
+        sub {
+            shop_product->create(
+                {
+                    sku               => 'BAN001',
+                    name              => 'bananas',
+                    price             => 5.34,
+                    uri               => 'kilo-of-bananas',
+                    short_description => 'Fresh bananas from Colombia',
+                    description       => 'The best bananas money can buy',
+                    active            => 1,
+                }
+            );
+        },
+        "create product BAN001"
     );
 
-    my $nav_fruit = shop_navigation->create(
-        {
-            uri       => 'fruit',
-            type      => 'nav',
-            scope     => 'main-menu',
-            name      => 'Fruit',
-            parent_id => undef,
-            active    => 1,
-        }
+    lives_ok(
+        sub {
+            shop_product->create(
+                {
+                    sku               => 'ORA001',
+                    name              => 'oranges',
+                    price             => 6.45,
+                    uri               => 'kilo-of-oranges',
+                    short_description => 'California oranges',
+                    description       => 'Organic California navel oranges',
+                    active            => 1,
+                }
+            );
+        },
+        "create product ORA001"
     );
-    my $nav_veg = shop_navigation->create(
-        {
-            uri       => 'vegetables',
-            type      => 'nav',
-            scope     => 'main-menu',
-            name      => 'Vegetables',
-            parent_id => undef,
-            active    => 1,
-        }
-    );
-
-    $schema->resultset('NavigationProduct')
-      ->create(
-        { sku => 'BAN001', navigation_id => $nav_fruit->navigation_id } );
-    $schema->resultset('NavigationProduct')
-      ->create(
-        { sku => 'ORA001', navigation_id => $nav_fruit->navigation_id } );
-    $schema->resultset('NavigationProduct')
-      ->create( { sku => 'CAR002', navigation_id => $nav_veg->navigation_id } );
-    $schema->resultset('NavigationProduct')
-      ->create( { sku => 'POT002', navigation_id => $nav_veg->navigation_id } );
-
-    shop_user->create(
-        {
-            username => 'testuser',
-            email    => 'user@example.com',
-            password => 'mypassword'
-        }
+    lives_ok(
+        sub {
+            shop_product->create(
+                {
+                    sku               => 'CAR002',
+                    name              => 'carrots',
+                    price             => 3.23,
+                    uri               => 'kilo-of-carrots',
+                    short_description => 'Local carrots',
+                    description       => 'Carrots from our local organic farm',
+                    active            => 1,
+                }
+            );
+        },
+        "create product CAR002"
     );
 
-    my $pop_countries =
-      Interchange6::Schema::Populate::CountryLocale->new->records;
-    $schema->populate( 'Country', $pop_countries );
+    lives_ok(
+        sub {
+            shop_product->create(
+                {
+                    sku               => 'POT002',
+                    name              => 'potatoes',
+                    price             => 10.15,
+                    uri               => 'kilo-of-potatoes',
+                    short_description => 'Maltese potatoes',
+                    description       => 'The best new potatoes in the world',
+                    active            => 1,
+                }
+            );
+        },
+        "create product POT002"
+    );
 
-    # let's test
+    my $nav_fruit;
+    lives_ok(
+        sub {
+            $nav_fruit = shop_navigation->create(
+                {
+                    uri       => 'fruit',
+                    type      => 'nav',
+                    scope     => 'main-menu',
+                    name      => 'Fruit',
+                    parent_id => undef,
+                    active    => 1,
+                }
+            );
+        },
+        "create nav fruit"
+    );
+
+    my $nav_veg;
+    lives_ok(
+        sub {
+            $nav_veg = shop_navigation->create(
+                {
+                    uri       => 'vegetables',
+                    type      => 'nav',
+                    scope     => 'main-menu',
+                    name      => 'Vegetables',
+                    parent_id => undef,
+                    active    => 1,
+                }
+            );
+        },
+        "create nav vegetables"
+    );
+
+    lives_ok(
+        sub {
+            $schema->resultset('NavigationProduct')
+              ->create(
+                { sku => 'BAN001', navigation_id => $nav_fruit->navigation_id }
+              );
+        },
+        "create navigation_product BAN001"
+    );
+
+    lives_ok(
+        sub {
+            $schema->resultset('NavigationProduct')
+              ->create(
+                { sku => 'ORA001', navigation_id => $nav_fruit->navigation_id }
+              );
+        },
+        "create navigation_product ORA001"
+    );
+
+    lives_ok(
+        sub {
+            $schema->resultset('NavigationProduct')
+              ->create(
+                { sku => 'CAR002', navigation_id => $nav_veg->navigation_id } );
+        },
+        "create navigation_product CAR002"
+    );
+
+    lives_ok(
+        sub {
+            $schema->resultset('NavigationProduct')
+              ->create(
+                { sku => 'POT002', navigation_id => $nav_veg->navigation_id } );
+        },
+        "create navigation_product POT002"
+    );
+
+    # test test test
 
     # product
 
@@ -163,7 +213,7 @@ test 'route tests' => sub {
         {
             level => "debug",
             message =>
-            "Redirecting permanently to product uri kilo-of-carrots for CAR002."
+"Redirecting permanently to product uri kilo-of-carrots for CAR002."
         },
         "Check auth failed debug message"
     ) || diag Dumper($log);
@@ -270,7 +320,7 @@ test 'route tests' => sub {
     $log = pop read_logs;
     cmp_deeply(
         $log,
-        { level   => "debug", message => "Authentication failed for testuser" },
+        { level => "debug", message => "Authentication failed for testuser" },
         "Check auth failed debug message"
     ) || diag Dumper($log);
 
@@ -291,11 +341,11 @@ test 'route tests' => sub {
     response_redirect_location_is $resp => 'http://localhost/',
       "Redirected to /";
 
-    $logs = read_logs;
+    my $logs = read_logs;
     $log = pop $logs;
     cmp_deeply(
         $log,
-        { level   => "debug", message => re('Change users_id') },
+        { level => "debug", message => re('Change users_id') },
         "users_id set in debug logs"
     ) || diag Dumper($log);
 
@@ -362,4 +412,5 @@ test 'route tests' => sub {
     response_content_like $resp => qr/cart=""/,        'cart is empty';
 
 };
+
 1;

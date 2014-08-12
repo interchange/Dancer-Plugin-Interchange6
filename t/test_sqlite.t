@@ -14,17 +14,14 @@ else {
     my @old_inc = @INC;
     setmoduledirs( File::Spec->catdir( 't', 'lib' ) );
 
-    # Test::Fixtures is always run first
-    @test_roles = sort grep { $_ ne 'Test::Fixtures' } findsubmod Test;
-    #unshift @test_roles, 'Test::Fixtures';
+    @test_roles = sort { $a cmp $b } findsubmod Test;
 
     setmoduledirs(@old_inc);
 }
 
 diag "with " . join(" ", @test_roles);
 
-#with 'Role::Fixtures', 'Role::SQLite', @test_roles;
-with 'Role::SQLite', @test_roles;
+with 'Role::SQLite', 'Role::Deploy', @test_roles;
 
 run_me;
 
