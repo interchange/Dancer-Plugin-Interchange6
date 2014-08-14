@@ -241,6 +241,10 @@ register shop_product => sub {
     _shop_resultset('Product', @_);
 };
 
+register shop_state => sub {
+    _shop_resultset('State', @_);
+};
+
 register shop_user => sub {
     _shop_resultset('User', @_);
 };
