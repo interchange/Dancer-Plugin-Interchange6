@@ -73,6 +73,34 @@ of your main module:
 Please refer to L<Dancer::Plugin::Interchange6::Routes> for configuration options
 and further information.
 
+=head1 KEYWORDS
+
+=head2 shop_cart
+
+Returns L<Dancer::Plugin::Interchange6::Cart> object.
+
+=head2 shop_charge
+
+Creates payment order and authorizes amount.
+
+=head2 shop_schema
+
+Returns L<Interchange6::Schema> object.
+
+=head2 shop_...
+
+Accessors for L<Interchange6::Schema> result classes. You can use it
+to retrieve a single object or the corresponding result set.
+
+    shop_product('F0001')->uri;
+
+    shop_navigation->search({type => 'manufacturer',
+                             active => 1});
+
+Available accessors are C<shop_address>, C<shop_attribute>, C<shop_country>,
+C<shop_message>, C<shop_navigation>, C<shop_order>, C<shop_product>,
+C<shop_state> and C<shop_user>.
+
 =head1 HOOKS
 
 This plugin installs the following hooks:
