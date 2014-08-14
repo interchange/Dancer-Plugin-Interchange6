@@ -34,6 +34,12 @@ test 'misc shop tests' => sub {
     ok($ret->name eq 'United States', 'Country name United States');
     ok($ret->show_states == 1, 'Show states for United States');
 
+    # check Manitoba
+    $ret = shop_state->find({state_iso_code => 'MB'});
+
+    isa_ok($ret, 'Interchange6::Schema::Result::State');
+    ok($ret->country_iso_code eq 'CA', 'Country code for Canada');
+
     # create product
     my %product_data;
 
