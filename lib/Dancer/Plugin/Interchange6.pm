@@ -17,11 +17,11 @@ Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 =head1 VERSION
 
-Version 0.040
+Version 0.051
 
 =cut
 
-our $VERSION = '0.040';
+our $VERSION = '0.051';
 
 =head1 REQUIREMENTS
 
