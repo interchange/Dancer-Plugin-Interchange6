@@ -1,5 +1,20 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.051 Fri Aug 15 11:34:47 2014 CEST
+
+    [ENHANCEMENTS]
+
+    * Add shop_state keyword (Stefan Hornburg).
+
+    [DOCUMENTATION]
+
+    * Add minimal documentation about shop_ keywords (Stefan Hornburg).
+
+    [TESTS]
+
+    * Move tests to using Test::Roo (Peter Mottram).
+    * Add Travis configuration file (Stefan Hornburg, Peter Mottram).
+
 0.040 Wed Jul  2 12:27:52 2014 CEST
 
     [API CHANGES]

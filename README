@@ -2,7 +2,7 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.040
+    Version 0.051
 
 REQUIREMENTS
     All Interchange6 Dancer applications need to use the
@@ -44,6 +44,29 @@ ROUTES
 
     Please refer to Dancer::Plugin::Interchange6::Routes for configuration
     options and further information.
+
+KEYWORDS
+  shop_cart
+    Returns Dancer::Plugin::Interchange6::Cart object.
+
+  shop_charge
+    Creates payment order and authorizes amount.
+
+  shop_schema
+    Returns Interchange6::Schema object.
+
+  shop_...
+    Accessors for Interchange6::Schema result classes. You can use it to
+    retrieve a single object or the corresponding result set.
+
+        shop_product('F0001')->uri;
+
+        shop_navigation->search({type => 'manufacturer',
+                                 active => 1});
+
+    Available accessors are `shop_address', `shop_attribute',
+    `shop_country', `shop_message', `shop_navigation', `shop_order',
+    `shop_product', `shop_state' and `shop_user'.
 
 HOOKS
     This plugin installs the following hooks:
