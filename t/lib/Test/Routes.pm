@@ -406,7 +406,7 @@ test 'route tests' => sub {
     lives_ok { $resp = dancer_response GET => '/cart' } "GET /cart";
 
     response_status_is $resp    => 200,                'status is ok';
-    response_content_like $resp => qr/cart_total="0"/, 'cart_total is 0';
+    response_content_like $resp => qr/cart_total="0/, 'cart_total is 0';
     response_content_like $resp => qr/cart=""/,        'cart is empty';
 
 };
