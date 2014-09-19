@@ -386,13 +386,6 @@ test 'route tests' => sub {
     response_redirect_location_is $resp => 'http://localhost/',
       "Redirected to /";
 
-    $log = pop @{&read_logs};
-    cmp_deeply(
-        $log,
-        { level => "debug", message => re('Change sessions_id.+undef') },
-        "Check sessions_id undef debug message"
-    ) || diag Dumper($log);
-
     lives_ok { $resp = dancer_response GET => '/sessionid' } "GET /sessionid";
     cmp_ok( $resp->content, 'ne', $sessionid, "Check session id has changed" );
 
