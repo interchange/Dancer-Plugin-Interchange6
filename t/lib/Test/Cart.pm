@@ -18,7 +18,7 @@ test 'cart tests' => sub {
 
     my $dt_now = DateTime->now;
 
-    my ( $cart, $product, $name, $ret, $time, $modified, $i, $log );
+    my ( $cart, $product, $name, $ret, $time, $i, $log );
 
     my $schema = schema;
 
@@ -45,13 +45,6 @@ test 'cart tests' => sub {
     $name = $cart->name('discount');
     ok( $name eq 'discount', "Testing custom name." );
 
-    # Values for created / modified
-    $ret = $cart->created;
-    ok( $ret >= $dt_now, "Testing cart creation time: $ret." );
-
-    $ret = $cart->last_modified;
-    ok( $ret >= $dt_now, "Testing cart modification time: $ret." );
-
     # Add products for testing
     shop_product->create( { sku => 'ABC', name => 'name', description => '' } );
     shop_product->create( { sku => 'DEF', name => 'name', description => '' } );
@@ -60,8 +53,6 @@ test 'cart tests' => sub {
 
     # Products
     $cart     = cart('new');
-    $modified = $cart->last_modified;
-    sleep 1;    # so we can check last_modified
     $product = {};
 
     cmp_ok( $cart->id, '==', 2, "cart id is 2" );
@@ -89,25 +80,14 @@ test 'cart tests' => sub {
 
     throws_ok { $cart->add($product) } qr/Missing required arg/,
       "add empty product";
-    ok( $cart->last_modified == $modified,
-        "Testing cart last modified with empty product." )
-      || diag "Last modified: " . $cart->last_modified;
 
     $product->{sku} = 'ABC';
     throws_ok { $cart->add($product) } qr/Missing required arg/,
       "Tetsing product with SKU only";
 
-    ok( $cart->last_modified == $modified,
-        "Testing cart last modified with SKU only product." )
-      || diag "Last modified: " . $cart->last_modified;
-
     $product->{name} = 'Foobar';
     throws_ok { $cart->add($product) } qr/Missing required arg/,
       "Testing product with SKU and name.";
-
-    ok( $cart->last_modified == $modified,
-        "Testing cart last modified with SKU and name." )
-      || diag "Last modified: " . $cart->last_modified;
 
     $product->{price} = '42';
     lives_ok { $ret = $cart->add($product) } "Testing adding correct product."
@@ -118,8 +98,6 @@ test 'cart tests' => sub {
     cmp_ok( $ret->price, '==', 42,       "Check price of returned product" );
     cmp_ok( $ret->quantity, '==', 1, "Check quantity of returned product" );
 
-    cmp_ok( $cart->last_modified, '>=', $modified,
-        "Check for update on last modified value." );
     cmp_ok( $cart->count, '==', 1,
         "Check number of products in the cart is 1" );
 

@@ -98,9 +98,7 @@ sub BUILDARGS {
         debug( "New cart ", $cart->carts_id, " ", $cart->name, "." );
     }
 
-    $args{'created'}       = $cart->created;
     $args{'id'}            = $cart->carts_id;
-    $args{'last_modified'} = $cart->last_modified;
 
     return \%args;
 }
@@ -129,7 +127,7 @@ sub BUILD {
 
         push @products,
           {
-            cart_products_id => $record->cart_products_id,
+            id               => $record->cart_products_id,
             sku              => $record->sku,
             name             => $record->product->name,
             quantity         => $record->quantity,

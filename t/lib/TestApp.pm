@@ -46,6 +46,8 @@ hook before_cart_display => sub {
 hook before_checkout_display => sub {
     my $tokens = shift;
 
+    print STDERR Dumper($tokens->{cart});
+
     $tokens->{cart} = join(
         ",",
         sort map {

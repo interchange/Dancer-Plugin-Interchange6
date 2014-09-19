@@ -90,9 +90,9 @@ sub cart_route {
         }
 
         # add stuff useful for cart display
-        $values{cart} = $cart->get_products;
         $values{cart_subtotal} = $cart->subtotal;
         $values{cart_total} = $cart->total;
+        $values{cart} = $cart->products;
 
         # call before_cart_display route so template tokens
         # can be injected

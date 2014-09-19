@@ -31,9 +31,10 @@ sub checkout_route {
         my %values;
 
         # add stuff useful for cart display
-        $values{cart} = cart->products;
-        $values{cart_subtotal} = cart->subtotal;
-        $values{cart_total} = cart->total;
+        my $cart = cart;
+        $values{cart_subtotal} = $cart->subtotal;
+        $values{cart_total} = $cart->total;
+        $values{cart} = $cart->products;
 
         # call before_checkout_display route so template tokens
         # can be injected
