@@ -10,8 +10,6 @@ use Dancer::Plugin::Interchange6::Routes;
 use Dancer::Plugin::Auth::Extensible;
 use Dancer::Plugin::DBIC;
 
-#print STDERR Dumper(config);
-
 get '/' => sub {
     return 'Home page';
 };
@@ -45,8 +43,6 @@ hook before_cart_display => sub {
 
 hook before_checkout_display => sub {
     my $tokens = shift;
-
-    print STDERR Dumper($tokens->{cart});
 
     $tokens->{cart} = join(
         ",",
