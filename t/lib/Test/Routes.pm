@@ -14,7 +14,7 @@ use Data::Dumper;
 
 use Interchange6::Schema;
 
-use Dancer qw/:tests !after/;
+use Dancer qw/:tests !before !after !set !any/;
 use Dancer::Plugin::DBIC;
 use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::Interchange6::Routes;

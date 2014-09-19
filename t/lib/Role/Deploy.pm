@@ -9,7 +9,7 @@ use Interchange6::Schema::Populate::StateLocale;
 use Interchange6::Schema::Populate::Zone;
 use Interchange6::Schema::Populate::MessageType;
 
-use Dancer qw(:tests !after);
+use Dancer qw(:tests !after !before);
 use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::DBIC;
 use Dancer::Test;
