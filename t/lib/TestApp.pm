@@ -36,7 +36,7 @@ hook before_cart_display => sub {
     $tokens->{cart} = join(
         ",",
         sort map {
-            join( ':', $_->{sku}, $_->{name}, $_->{quantity}, $_->{price} )
+            join( ':', $_->sku, $_->name, $_->quantity, $_->price )
         } @{ $tokens->{cart} }
     );
 };
@@ -47,7 +47,7 @@ hook before_checkout_display => sub {
     $tokens->{cart} = join(
         ",",
         sort map {
-            join( ':', $_->{sku}, $_->{name}, $_->{quantity}, $_->{price} )
+            join( ':', $_->sku, $_->name, $_->quantity, $_->price )
         } @{ $tokens->{cart} }
     );
 };
