@@ -336,7 +336,8 @@ sub _setup_routes {
 	    my $template = $routes_config->{navigation}->{template};
 
 	    if (my $attr_value = $nav->find_attribute_value('template')) {
-		$template = $attr_value;
+            debug "Change template name from $template to $attr_value due to navigation attribute.";
+            $template = $attr_value;
 	    }
 
             my $tokens = {navigation => $nav,
