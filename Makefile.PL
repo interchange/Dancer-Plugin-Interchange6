@@ -36,7 +36,8 @@ WriteMakefile(
     META_MERGE        => {
         resources => {
             repository  => 'https://github.com/interchange/Dancer-Plugin-Interchange6.git',
-            bugtracker => 'https://github.com/interchange/Dancer-Plugin-Interchange6/issues'
+            bugtracker => 'https://github.com/interchange/Dancer-Plugin-Interchange6/issues',
+            IRC => 'irc://irc.freenode.net/#interchange',
         },
     },
 );
