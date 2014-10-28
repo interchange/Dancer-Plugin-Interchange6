@@ -271,7 +271,7 @@ sub _after_cart_add {
 
     # first check whether product exists
     if ( !resultset('Product')->find( $product->{sku} ) ) {
-        $self->set_error("Item $product->{sku} doesn't exist.");
+        die "Item $product->{sku} doesn't exist.";
         return;
     }
 

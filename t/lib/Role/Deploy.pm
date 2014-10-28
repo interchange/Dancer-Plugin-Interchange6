@@ -38,25 +38,6 @@ test 'deploy tests' => sub {
 
     lives_ok { $schema->deploy } "Deploy schema";
 
-    my $pop_countries =
-      Interchange6::Schema::Populate::CountryLocale->new->records;
-    my $pop_states = Interchange6::Schema::Populate::StateLocale->new->records;
-    my $pop_zones  = Interchange6::Schema::Populate::Zone->new->records;
-    my $pop_message_types =
-      Interchange6::Schema::Populate::MessageType->new->records;
-
-    lives_ok( sub { my $ret = $schema->populate( 'Country', $pop_countries ) },
-        "populate Country" );
-    lives_ok( sub { my $ret = $schema->populate( 'State', $pop_states ) },
-        "populate State" );
-    lives_ok( sub { my $ret = $schema->populate( 'Zone', $pop_zones ) },
-        "populate Zone" );
-    lives_ok(
-        sub { my $ret = $schema->populate( 'MessageType', $pop_message_types ) }
-        ,
-        "populate MessageType"
-    );
-
     lives_ok(
         sub {
             shop_user->create(

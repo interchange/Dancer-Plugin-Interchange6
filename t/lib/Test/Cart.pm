@@ -140,7 +140,7 @@ test 'cart tests' => sub {
                 my ( $cart, $product ) = @_;
 
                 if ( $product->sku eq '123' ) {
-                    $cart->set_error('Product not removed due to hook.');
+                    die 'Product not removed due to hook.';
                 }
               }
         },
@@ -155,11 +155,10 @@ test 'cart tests' => sub {
 
     cmp_ok( $cart->count, '==', 2, "Testing count is 2." );
 
-    lives_ok { $cart->remove('123') } "Try to remove product 123";
-    cmp_ok(
-        $cart->error, 'eq',
-        'Product not removed due to hook.',
-        "Test removal prevented by hook"
+    throws_ok(
+        sub { $cart->remove('123') },
+        qr/Product not removed due to hook/,
+        "Try to remove product 123"
     );
 
     cmp_ok( $cart->count, '==', 2, "Testing count is still 2." );
@@ -173,10 +172,11 @@ test 'cart tests' => sub {
     cmp_ok( $cart->total, '==', 0, "Cart total is 0" );
 
     $product = { sku => 'GHI', name => 'Foobar', price => 2.22, quantity => 3 };
-    lives_ok { $ret = $cart->add($product) } "Add product GHI";
-    isa_ok( $ret, 'Interchange6::Cart::Product' );
-
-    cmp_ok( $cart->total, '==', 6.66, "Cart total for 3 pieces of GHI." );
+    throws_ok(
+        sub { $ret = $cart->add($product) },
+        qr/Item GHI doesn't exist/,
+        "Add product GHI fails - not in DB"
+    );
 
     $product = { sku => 'KLM', name => 'Foobar', price => 3.34, quantity => 1 };
     lives_ok { $ret = $cart->add($product) } "Add product KLM";
@@ -190,7 +190,7 @@ test 'cart tests' => sub {
             my ( $cart, $product ) = @_;
 
             if ( $product->sku eq 'KLM' ) {
-                $cart->set_error('Test error');
+                die 'Test error';
             }
           }
     }
@@ -199,11 +199,11 @@ test 'cart tests' => sub {
     lives_ok { $cart->clear } "Clear cart";
 
     $product = { sku => 'KLM', name => 'Foobar', price => 3.34, quantity => 1 };
-    lives_ok { $ret = $cart->add($product) } "Add product with proce 3.34";
+    throws_ok( sub { $ret = $cart->add($product) },
+        qr/Test error/, "Add product with proce 3.34" );
 
     cmp_ok( $cart->count, '==', 0, "Cart after adding KLM is empty" );
 
-    cmp_ok( $cart->error, 'eq', 'Test error', "Checking cart error" );
     cmp_ok( $cart->id,    '==', 2,            "cart id is 2" );
 
     lives_ok {
