@@ -7,4 +7,5 @@ perl:
   - "5.14"
 install:
   - cpanm --quiet --notest DBD::Pg http://cpan.metacpan.org/authors/id/T/TJ/TJC/Test-PostgreSQL-1.02.tar.gz DBD::mysql Test::mysqld DateTime::Format::Pg Test::Roo
+  - cpanm --dev --quiet --notest Interchange6::Schema
   - cpanm --quiet --installdeps --notest .
