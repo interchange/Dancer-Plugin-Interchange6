@@ -235,6 +235,8 @@ register_hook(qw/before_cart_add_validate
                  before_cart_clear after_cart_clear
                  before_cart_set_users_id after_cart_set_users_id
                  before_cart_set_sessions_id after_cart_set_sessions_id
+                 before_cart_product_set_quantity
+                 after_cart_product_set_quantity
                 /);
 
 register shop_schema => sub {
