@@ -16,6 +16,7 @@ t/00-load.t
 t/lib/Role/config.yml
 t/lib/Role/Deploy.pm
 t/lib/Role/views/cart
+t/lib/Role/views/category
 t/lib/Role/views/checkout
 t/lib/Role/views/listing
 t/lib/Role/views/login

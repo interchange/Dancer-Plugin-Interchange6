@@ -16,6 +16,7 @@ use strict;
 use warnings;
 
 use Dancer qw(:syntax !before !after);
+use Dancer::Plugin::Auth::Extensible;
 use Dancer::Plugin::DBIC;
 
 use Moo;
@@ -111,7 +112,7 @@ Load existing cart from the database along with any products it contains and add
 
 sub BUILD {
     my $self = shift;
-    my @products;
+    my ( @products, $roles );
 
     my $rset = schema( $self->database )->resultset('Cart')->find(
         {
@@ -123,6 +124,14 @@ sub BUILD {
       ->search_related( 'cart_products', {},
         { join => 'product', prefetch => 'product', } );
 
+    if ( logged_in_user ) {
+        $roles = user_roles;
+        push @$roles, 'authenticated';
+    }
+    else {
+        $roles = ['anonymous'];
+    }
+
     while ( my $record = $rset->next ) {
 
         push @products,
@@ -133,6 +142,8 @@ sub BUILD {
             quantity         => $record->quantity,
             price            => $record->product->price,
             uri              => $record->product->uri,
+            selling_price    => $record->product->selling_price(
+                { quantity => $record->quantity, roles => $roles }),
           };
     }
 
@@ -307,8 +318,6 @@ sub _after_cart_update {
     $new_product = $args[2];
 
     $self->_find_and_update( $product->{sku}, $new_product );
-
-    #session products => $self->products;
 }
 
 sub _after_cart_remove {

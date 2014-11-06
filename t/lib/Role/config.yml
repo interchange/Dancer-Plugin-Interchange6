@@ -24,3 +24,5 @@ plugins:
   Interchange6::Routes:
     checkout:
       active: 1
+    navigation:
+      records: 10

@@ -3,6 +3,7 @@ package Dancer::Plugin::Interchange6::Routes::Cart;
 use Dancer ':syntax';
 use Dancer::Plugin;
 use Dancer::Plugin::Interchange6;
+use Dancer::Plugin::Auth::Extensible;
 
 =head1 NAME
 
@@ -26,7 +27,7 @@ sub cart_route {
     return sub {
         my %values;
         my ($input, $product, $cart, $cart_item, $cart_name, $cart_input,
-            $cart_product);
+            $cart_product, $roles);
 
         if ($cart_name = param('cart') && scalar($cart_name)) {
             $cart = cart($cart_name);
@@ -37,14 +38,21 @@ sub cart_route {
 
         debug "cart_route cart name: " . $cart->name;
 
-	if (param('remove')) {
-	    # removing item from cart
-	    $cart->remove(param('remove'));
-	}
+        if ( param('remove') ) {
+            # removing item from cart
+            $cart->remove( param('remove') );
+        }
 
         if ($input = param('sku')) {
             if (scalar($input)) {
                 $product = shop_product($input);
+
+                unless ( defined $product ) {
+                    warning "sku not found in POST /cart: $input";
+                    session shop_cart_error =>
+                      { message => "Product not found with sku: $input" };
+                    return redirect '/';
+                }
 
                 # retrieve product attributes for possible variants
                 my $attr_ref = $product->attribute_iterator(hashref => 1);
@@ -70,13 +78,27 @@ sub cart_route {
                     $cart_product = $product;
                 }
 
-                $cart_input = {sku => $cart_product->sku,
-                               name => $cart_product->name,
-                               price => $cart_product->price};
+                if ( logged_in_user ) {
+                    $roles = user_roles;
+                    push @$roles, 'authenticated';
+                }
+                else {
+                    $roles = ['anonymous'];
+                }
 
-		if (param('quantity')) {
-		    $cart_input->{quantity} = param('quantity');
-		}
+                my $quantity = 1;
+                if ( param('quantity') ) {
+                    $quantity = param('quantity');
+                }
+
+                $cart_input = {
+                    sku           => $cart_product->sku,
+                    name          => $cart_product->name,
+                    price         => $cart_product->price,
+                    selling_price => $cart_product->selling_price(
+                        { quantity => $quantity, roles => $roles }
+                    ),
+                };
 
                 debug "Cart input: ", $cart_input;
 
