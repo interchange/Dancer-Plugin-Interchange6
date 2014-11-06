@@ -21,7 +21,8 @@ else {
 
 diag "with " . join(" ", @test_roles);
 
-with 'Role::MySQL', 'Role::Deploy', @test_roles;
+with 'Interchange6::Test::Role::Fixtures', 'Interchange6::Test::Role::MySQL',
+  'Role::Deploy', @test_roles;
 
 run_me;
 

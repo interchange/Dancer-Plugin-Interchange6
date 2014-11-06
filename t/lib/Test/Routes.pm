@@ -26,21 +26,7 @@ test 'route tests' => sub {
 
     my ( $resp, $sessionid, %form, $log, @logs );
 
-    set plugins => {
-        DBIC => {
-            default => {
-                schema_class => $self->schema_class,
-                connect_info => [ $self->connect_info ],
-            }
-        }
-    };
-
     my $schema = schema;
-
-    set session => 'DBIC';
-    set session_options => { schema => $schema, };
-
-    #lives_ok { $schema->deploy } "Deploy schema";
 
     use TestApp;
     use Dancer::Test;
@@ -327,8 +313,8 @@ test 'route tests' => sub {
     read_logs;    # clear logs
 
     %form = (
-        username => 'testuser',
-        password => 'mypassword'
+        username => 'customer1',
+        password => 'c1passwd'
     );
 
     lives_ok {
@@ -350,7 +336,7 @@ test 'route tests' => sub {
     $log = pop @$logs;
     cmp_deeply(
         $log,
-        { level => "debug", message => "users accepted user testuser" },
+        { level => "debug", message => "users accepted user customer1" },
         "login successful in debug logs"
     ) || diag Dumper($log);
 
