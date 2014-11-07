@@ -21,8 +21,8 @@ WriteMakefile(
                       },
     PREREQ_PM => {
                   'YAML'       => 0,
-                  'Interchange6::Schema'     => 0.051,
-                  'Interchange6' => 0.040,
+                  'Interchange6::Schema'     => '0.060',
+                  'Interchange6' => '0.060',
                   'Dancer'     => 1.3098,
                   'Dancer::Session::DBIC' => 0,
                   'Dancer::Plugin::DBIC' => 0,
