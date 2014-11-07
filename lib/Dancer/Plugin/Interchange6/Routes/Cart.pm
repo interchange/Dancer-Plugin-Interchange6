@@ -91,13 +91,17 @@ sub cart_route {
                     $quantity = param('quantity');
                 }
 
+                # here we should have all Interchange6::Cart::Product
+                # attributes except id, subtotal and total:
                 $cart_input = {
-                    sku           => $cart_product->sku,
                     name          => $cart_product->name,
                     price         => $cart_product->price,
                     selling_price => $cart_product->selling_price(
                         { quantity => $quantity, roles => $roles }
                     ),
+                    quantity      => $quantity,
+                    sku           => $cart_product->sku,
+                    uri           => $cart_product->uri,
                 };
 
                 debug "Cart input: ", $cart_input;

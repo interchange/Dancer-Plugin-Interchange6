@@ -110,9 +110,9 @@ test 'route tests' => sub {
     "POST /cart add Ergo Roller camel black";
 
     response_status_is $resp => 200, 'status is ok';
-    response_content_like $resp => qr/cart_subtotal="16.00"/,
+    response_content_like $resp => qr/cart_subtotal="16/,
       'cart_subtotal is 16.00';
-    response_content_like $resp => qr/cart_total="16.00"/, 'cart_total is 16.00';
+    response_content_like $resp => qr/cart_total="16/, 'cart_total is 16.00';
     response_content_like $resp => qr/cart="os28004-CAM-BLK:Ergo Roller:1:16/,
       'found qty 1 os28004-CAM-BLK in cart';
 
@@ -121,9 +121,9 @@ test 'route tests' => sub {
     "POST /cart add Ergo Roller camel black";
 
     response_status_is $resp => 200, 'status is ok';
-    response_content_like $resp => qr/cart_subtotal="32.00"/,
+    response_content_like $resp => qr/cart_subtotal="32/,
       'cart_subtotal is 32.00';
-    response_content_like $resp => qr/cart_total="32.00"/, 'cart_total is 32.00';
+    response_content_like $resp => qr/cart_total="32/, 'cart_total is 32.00';
     response_content_like $resp => qr/cart="os28004-CAM-BLK:Ergo Roller:2:16/,
       'found qty 2 os28004-CAM-BLK in cart';
 
@@ -133,9 +133,9 @@ test 'route tests' => sub {
     "POST /cart add Ergo Roller camel white";
 
     response_status_is $resp => 200, 'status is ok';
-    response_content_like $resp => qr/cart_subtotal="48.00"/,
+    response_content_like $resp => qr/cart_subtotal="48/,
       'cart_subtotal is 48.00';
-    response_content_like $resp => qr/cart_total="48.00"/, 'cart_total is 48.00';
+    response_content_like $resp => qr/cart_total="48/, 'cart_total is 48.00';
     response_content_like $resp =>
       qr/cart="os28004-CAM-BLK:Ergo Roller:2:16.*?,os28004-CAM-WHT:Ergo Roller:1:16/,
       'found qty 1 os28004-CAM-WHT in cart and qty 2 BLK';
@@ -153,9 +153,9 @@ test 'route tests' => sub {
     lives_ok { $resp = dancer_response GET => '/cart' } "GET /cart";
 
     response_status_is $resp => 200, 'status is ok';
-    response_content_like $resp => qr/cart_subtotal="48.00"/,
+    response_content_like $resp => qr/cart_subtotal="48/,
       'cart_subtotal is 48.00';
-    response_content_like $resp => qr/cart_total="48.00"/, 'cart_total is 48.00';
+    response_content_like $resp => qr/cart_total="48/, 'cart_total is 48.00';
     response_content_like $resp =>
       qr/cart="os28004-CAM-BLK:Ergo Roller:2:16.*?,os28004-CAM-WHT:Ergo Roller:1:16/,
       'found qty 1 os28004-CAM-WHT in cart and qty 2 BLK';
