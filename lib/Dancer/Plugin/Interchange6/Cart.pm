@@ -18,6 +18,7 @@ use warnings;
 use Dancer qw(:syntax !before !after);
 use Dancer::Plugin::Auth::Extensible;
 use Dancer::Plugin::DBIC;
+use Dancer::Hook;
 
 use Moo;
 use Interchange6::Types;
@@ -51,7 +52,7 @@ Attribute is required.
 
 has '+sessions_id' => ( required => 1, );
 
-=head1 INHERITED METHODS
+=head1 METHODS
 
 =head2 get_sessions_id
 
@@ -128,9 +129,6 @@ sub BUILD {
         $roles = user_roles;
         push @$roles, 'authenticated';
     }
-    else {
-        $roles = ['anonymous'];
-    }
 
     while ( my $record = $rset->next ) {
 
@@ -164,16 +162,48 @@ sub BUILD {
 
 =head1 METHODS
 
-=head2 execute_hook
+=head2 add
 
-Ties Interchange6 hooks into Dancer's hook system.
+Add one or more products to the cart.
+
+See L<Interchange6::Cart/add> for details of argument and return,
 
 =cut
 
-sub execute_hook {
-    my $self = shift;
-    Dancer::Factory::Hook->instance->execute_hooks(@_);
-}
+around 'add' => sub {
+    my ( $orig, $self, @args ) = @_;
+
+    $self->execute_hooks( 'before_cart_add_validate', $self, @args );
+
+    my ( $product, $update, $record );
+
+    $product = $args[1];
+    $update  = $args[2];
+
+    # first check whether product exists
+    if ( !resultset('Product')->find( $product->{sku} ) ) {
+        die "Item $product->{sku} doesn't exist.";
+        return;
+    }
+
+    if ($update) {
+
+        # update product in database
+        $record = { quantity => $product->quantity };
+        $self->_find_and_update( $product->sku, $record );
+    }
+    else {
+        # add new product to database
+        $record = {
+            sku           => $product->{sku},
+            quantity      => $product->{quantity},
+            cart_position => 0
+        };
+        resultset('CartProduct')->create($record);
+    }
+
+    $self->execute_hooks( 'after_cart_add', $ret, @args );
+};
 
 =head2 load_saved_products
 
@@ -263,47 +293,6 @@ sub _find_and_update {
 }
 
 # hook methods
-sub _after_cart_add {
-    my ( $self, @args ) = @_;
-    my ( $product, $update, $record );
-
-    unless ( $self eq $args[0] ) {
-
-        # not our cart
-        return;
-    }
-
-    $product = $args[1];
-    $update  = $args[2];
-
-    unless ( $self->id ) {
-        $self->_create_cart;
-    }
-
-    # first check whether product exists
-    if ( !resultset('Product')->find( $product->{sku} ) ) {
-        die "Item $product->{sku} doesn't exist.";
-        return;
-    }
-
-    if ($update) {
-
-        # update product in database
-        $record = { quantity => $product->quantity };
-        $self->_find_and_update( $product->sku, $record );
-    }
-    else {
-        # add new product to database
-        $record = {
-            carts_id      => $self->id,
-            sku           => $product->{sku},
-            quantity      => $product->{quantity},
-            cart_position => 0
-        };
-        resultset('CartProduct')->create($record);
-    }
-}
-
 sub _after_cart_update {
     my ( $self, @args ) = @_;
     my ( $product, $new_product, $count );

@@ -24,7 +24,7 @@ test 'route tests' => sub {
 
     diag "Test::Routes";
 
-    my ( $resp, $sessionid, %form, $log, @logs );
+    my ( $resp, $sessionid, %form, $log, @logs, $user );
 
     my $schema = schema;
 
@@ -249,6 +249,37 @@ test 'route tests' => sub {
     response_status_is $resp => 200, 'status is ok';
     response_content_like $resp => qr/Private page/, 'got private page';
 
+    # price modifiers
+
+    lives_ok( sub { $user = shop_user->find({username => 'customer1' }) },
+            "grab customer1 fom db" );
+
+    cmp_ok( $user->roles->count, "==", 0, "user has 0 roles" );
+
+    %form = ( sku => 'os28005', quantity => 5 );
+    lives_ok { $resp = dancer_response( POST => '/cart', { body => {%form} } ) }
+    "POST /cart add 5 Trim Brushes";
+    response_status_is $resp => 200, 'status is ok';
+    response_content_like $resp => qr/cart_subtotal="92.95"/,
+      'cart_subtotal is 92.95';
+    response_content_like $resp => qr/cart=.+os28005:Trim Brush:5:8.99:/,
+      'found qty 5 os28005 @ 8.99 in cart';
+
+    %form = ( sku => 'os28005', quantity => 5 );
+    lives_ok { $resp = dancer_response( POST => '/cart', { body => {%form} } ) }
+    "POST /cart add 5 Trim Brushes";
+    response_status_is $resp => 200, 'status is ok';
+    response_content_like $resp => qr/cart_subtotal="132.90"/,
+      'cart_subtotal is 132.90'
+      or diag "subtotal of 137.90 means price modifier has not been applied";
+    response_content_like $resp => qr/cart=.+os28005:Trim Brush:10:8.49:/,
+      'found qty 10 os28005 @ 8.49 in cart';
+
+    #lives_ok( sub { $user->add_to_roles({ name => 'trade
+
+};
+1;
+__END__
     # checkout
 
     lives_ok { $resp = dancer_response GET => '/checkout' } "GET /checkout";
