@@ -1,5 +1,6 @@
 package Dancer::Plugin::Interchange6::Routes::Cart;
 
+use Data::Dumper::Concise;
 use Dancer ':syntax';
 use Dancer::Plugin;
 use Dancer::Plugin::Interchange6;
@@ -81,9 +82,7 @@ sub cart_route {
                 if ( logged_in_user ) {
                     $roles = user_roles;
                     push @$roles, 'authenticated';
-                }
-                else {
-                    $roles = ['anonymous'];
+                    print STDERR "ROLES: \n" . Dumper( $roles );
                 }
 
                 my $quantity = 1;
