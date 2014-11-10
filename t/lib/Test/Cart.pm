@@ -78,19 +78,23 @@ test 'cart tests' => sub {
         }
     }
 
-    throws_ok { $cart->add($product) } qr/Missing required arg/,
+    throws_ok { $cart->add($product) }
+    qr/Attempt to add product to cart without sku failed/,
       "add empty product";
 
     $product->{sku} = 'ABC';
-    throws_ok { $cart->add($product) } qr/Missing required arg/,
-      "Tetsing product with SKU only";
+    throws_ok { $cart->add($product) }
+    qr/isa check for "price" failed: is not a positive numeric/,
+      "Testing product with SKU only";
 
     $product->{name} = 'Foobar';
-    throws_ok { $cart->add($product) } qr/Missing required arg/,
+    throws_ok { $cart->add($product) }
+    qr/isa check for "price" failed: is not a positive numeric/,
       "Testing product with SKU and name.";
 
     $product->{price} = '42';
-    lives_ok { $ret = $cart->add($product) } "Testing adding correct product."
+
+    lives_ok { $ret = $cart->add('os28005') } "Testing adding correct product."
       || diag "Cart error: $cart->error";
     isa_ok( $ret, 'Interchange6::Cart::Product' );
     cmp_ok( $ret->sku,   'eq', 'ABC',    "Check sku of returned product" );

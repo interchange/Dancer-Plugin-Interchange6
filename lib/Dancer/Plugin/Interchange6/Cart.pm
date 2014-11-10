@@ -16,9 +16,11 @@ use strict;
 use warnings;
 
 use Dancer qw(:syntax !before !after);
+use Dancer::Plugin;
 use Dancer::Plugin::Auth::Extensible;
 use Dancer::Plugin::DBIC;
-use Dancer::Hook;
+use Scalar::Util 'blessed';
+use Try::Tiny;
 
 use Moo;
 use Interchange6::Types;
@@ -100,7 +102,7 @@ sub BUILDARGS {
         debug( "New cart ", $cart->carts_id, " ", $cart->name, "." );
     }
 
-    $args{'id'}            = $cart->carts_id;
+    $args{'id'} = $cart->carts_id;
 
     return \%args;
 }
@@ -125,7 +127,7 @@ sub BUILD {
       ->search_related( 'cart_products', {},
         { join => 'product', prefetch => 'product', } );
 
-    if ( logged_in_user ) {
+    if (logged_in_user) {
         $roles = user_roles;
         push @$roles, 'authenticated';
     }
@@ -134,14 +136,15 @@ sub BUILD {
 
         push @products,
           {
-            id               => $record->cart_products_id,
-            sku              => $record->sku,
-            name             => $record->product->name,
-            quantity         => $record->quantity,
-            price            => $record->product->price,
-            uri              => $record->product->uri,
-            selling_price    => $record->product->selling_price(
-                { quantity => $record->quantity, roles => $roles }),
+            id            => $record->cart_products_id,
+            sku           => $record->sku,
+            name          => $record->product->name,
+            quantity      => $record->quantity,
+            price         => $record->product->price,
+            uri           => $record->product->uri,
+            selling_price => $record->product->selling_price(
+                { quantity => $record->quantity, roles => $roles }
+            ),
           };
     }
 
@@ -149,7 +152,7 @@ sub BUILD {
     $self->seed( \@products );
 
     # pull in hooks from Interchange6::Cart
-    hook 'after_cart_add'    => sub { $self->_after_cart_add(@_) };
+    #hook 'after_cart_add'    => sub { $self->_after_cart_add(@_) };
     hook 'after_cart_update' => sub { $self->_after_cart_update(@_) };
     hook 'after_cart_remove' => sub { $self->_after_cart_remove(@_) };
     hook 'after_cart_rename' => sub { $self->_after_cart_rename(@_) };
@@ -166,43 +169,106 @@ sub BUILD {
 
 Add one or more products to the cart.
 
-See L<Interchange6::Cart/add> for details of argument and return,
+Possible arguments:
+
+=over
+
+=item * single product sku (scalar value)
+
+=item * hashref with keys 'sku' and 'quantity' (quantity is optional and defaults to 1)
+
+=item * an array reference of either of the above
+
+=back
 
 =cut
 
 around 'add' => sub {
-    my ( $orig, $self, @args ) = @_;
+    my ( $orig, $self, $args ) = @_;
+    my ( @args, %products, @ret );
 
-    $self->execute_hooks( 'before_cart_add_validate', $self, @args );
+    # convert to array reference if we don't already have one
+    $args = [$args] unless ref($args) eq 'ARRAY';
 
-    my ( $product, $update, $record );
+    execute_hook( 'before_cart_add_validate', $self, $args );
 
-    $product = $args[1];
-    $update  = $args[2];
+    # basic validation + add each validated arg to @args
 
-    # first check whether product exists
-    if ( !resultset('Product')->find( $product->{sku} ) ) {
-        die "Item $product->{sku} doesn't exist.";
-        return;
+    foreach my $arg (@$args) {
+
+        # make sure we have hasref
+        unless ( ref($arg) eq 'HASH' ) {
+            $arg = { sku => $arg };
+        }
+
+        # keep this hashref for later
+        push @args, $arg;
+
+        die "Attempt to add product to cart without sku failed."
+          unless defined $arg->{sku};
+
+        $products{ $arg->{sku} } = rset('Product')->find( $arg->{sku} );
+
+        die "Product with sku $arg->{sku} doesn't exist."
+          unless defined( $products{ $arg->{sku} } );
     }
 
-    if ($update) {
+    execute_hook( 'before_cart_add', $self, $args );
 
-        # update product in database
-        $record = { quantity => $product->quantity };
-        $self->_find_and_update( $product->sku, $record );
-    }
-    else {
-        # add new product to database
-        $record = {
-            sku           => $product->{sku},
-            quantity      => $product->{quantity},
-            cart_position => 0
+    # add products to cart
+
+    foreach my $arg ( @args ) {
+
+        my ( $cart_input, $ret, $cart_product, $query );
+
+        $cart_input = {
+            name     => $products{ $arg->{sku} }->name,
+            price    => $products{ $arg->{sku} }->price,
+            sku      => $products{ $arg->{sku} }->sku,
+            uri      => $products{ $arg->{sku} }->uri,
         };
-        resultset('CartProduct')->create($record);
+        $cart_input->{quantity} = $arg->{quantity}
+          if defined( $arg->{quantity} );
+
+        use DDP;
+        p $cart_input;
+
+        # bubble up the add
+        $ret = $orig->( $self, $cart_input );
+
+        # update or create in db
+
+        my $cart = rset('Cart')->find($self->id);
+        $cart_product = $cart->cart_products->search(
+            { carts_id => $self->id, sku => $arg->{sku} },
+            { rows     => 1 } )->single;
+
+        if ( $cart_product ) {
+            $cart_product->update({ quantity => $ret->quantity });
+        }
+        else {
+            $cart_product = $cart->create_related(
+                'cart_products',
+                {
+                    sku           => $ret->sku,
+                    quantity      => $ret->quantity,
+                    cart_position => 0,
+                }
+            );
+        }
+
+        # set selling_price
+
+        $query = { quantity => $ret->quantity };
+        if ( logged_in_user ) {
+            $query->{roles} = [ user_roles, 'authenticated' ];
+        }
+        $ret->selling_price( $cart_product->product->selling_price($query) );
+
+        push @ret, $ret;
     }
 
-    $self->execute_hooks( 'after_cart_add', $ret, @args );
+    execute_hook( 'after_cart_add', $self, @args );
 };
 
 =head2 load_saved_products

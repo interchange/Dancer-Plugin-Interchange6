@@ -79,12 +79,6 @@ sub cart_route {
                     $cart_product = $product;
                 }
 
-                if ( logged_in_user ) {
-                    $roles = user_roles;
-                    push @$roles, 'authenticated';
-                    print STDERR "ROLES: \n" . Dumper( $roles );
-                }
-
                 my $quantity = 1;
                 if ( param('quantity') ) {
                     $quantity = param('quantity');
@@ -95,13 +89,11 @@ sub cart_route {
                 $cart_input = {
                     name          => $cart_product->name,
                     price         => $cart_product->price,
-                    selling_price => $cart_product->selling_price(
-                        { quantity => $quantity, roles => $roles }
-                    ),
                     quantity      => $quantity,
                     sku           => $cart_product->sku,
                     uri           => $cart_product->uri,
                 };
+                $cart_input
 
                 debug "Cart input: ", $cart_input;
 
