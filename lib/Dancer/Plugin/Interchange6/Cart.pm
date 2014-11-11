@@ -39,7 +39,7 @@ Attribute is required.
 =cut
 
 has database => (
-    is       => 'rw',
+    is       => 'ro',
     isa      => Str,
     required => 1,
 );
@@ -150,17 +150,6 @@ sub BUILD {
 
     # use seed to avoid hooks
     $self->seed( \@products );
-
-    # pull in hooks from Interchange6::Cart
-    #hook 'after_cart_add'    => sub { $self->_after_cart_add(@_) };
-    hook 'after_cart_update' => sub { $self->_after_cart_update(@_) };
-    hook 'after_cart_remove' => sub { $self->_after_cart_remove(@_) };
-    hook 'after_cart_rename' => sub { $self->_after_cart_rename(@_) };
-    hook 'after_cart_clear'  => sub { $self->_after_cart_clear(@_) };
-    hook 'after_cart_set_users_id' =>
-      sub { $self->_after_cart_set_users_id(@_) };
-    hook 'after_cart_set_sessions_id' =>
-      sub { $self->_after_cart_set_sessions_id(@_) };
 }
 
 =head1 METHODS
@@ -181,11 +170,13 @@ Possible arguments:
 
 =back
 
+In list context returns an array of L<Interchange6::Cart::Product>s and in scalar context returns an array reference of the same.
+
 =cut
 
 around 'add' => sub {
     my ( $orig, $self, $args ) = @_;
-    my ( @args, %products, @ret );
+    my ( @products, @ret );
 
     # convert to array reference if we don't already have one
     $args = [$args] unless ref($args) eq 'ARRAY';
@@ -201,46 +192,42 @@ around 'add' => sub {
             $arg = { sku => $arg };
         }
 
-        # keep this hashref for later
-        push @args, $arg;
-
         die "Attempt to add product to cart without sku failed."
           unless defined $arg->{sku};
 
-        $products{ $arg->{sku} } = rset('Product')->find( $arg->{sku} );
+        my $result =
+          schema( $self->database )->resultset('Product')->find( $arg->{sku} );
 
-        die "Product with sku $arg->{sku} doesn't exist."
-          unless defined( $products{ $arg->{sku} } );
+        die "Product with sku '$arg->{sku}' does not exist."
+          unless defined $result;
+
+        my $product = {
+            name     => $result->name,
+            price    => $result->price,
+            sku      => $result->sku,
+            uri      => $result->uri,
+        };
+        $product->{quantity} = $arg->{quantity}
+          if defined( $arg->{quantity} );
+
+        push @products, $product;
     }
 
-    execute_hook( 'before_cart_add', $self, $args );
+    execute_hook( 'before_cart_add', $self, @products );
 
     # add products to cart
 
-    foreach my $arg ( @args ) {
+    my $cart = schema( $self->database )->resultset('Cart')->find( $self->id );
 
-        my ( $cart_input, $ret, $cart_product, $query );
-
-        $cart_input = {
-            name     => $products{ $arg->{sku} }->name,
-            price    => $products{ $arg->{sku} }->price,
-            sku      => $products{ $arg->{sku} }->sku,
-            uri      => $products{ $arg->{sku} }->uri,
-        };
-        $cart_input->{quantity} = $arg->{quantity}
-          if defined( $arg->{quantity} );
-
-        use DDP;
-        p $cart_input;
+    foreach my $product ( @products ) {
 
         # bubble up the add
-        $ret = $orig->( $self, $cart_input );
+        my $ret = $orig->( $self, $product );
 
         # update or create in db
 
-        my $cart = rset('Cart')->find($self->id);
-        $cart_product = $cart->cart_products->search(
-            { carts_id => $self->id, sku => $arg->{sku} },
+        my $cart_product = $cart->cart_products->search(
+            { carts_id => $self->id, sku => $product->{sku} },
             { rows     => 1 } )->single;
 
         if ( $cart_product ) {
@@ -259,7 +246,7 @@ around 'add' => sub {
 
         # set selling_price
 
-        $query = { quantity => $ret->quantity };
+        my $query = { quantity => $ret->quantity };
         if ( logged_in_user ) {
             $query->{roles} = [ user_roles, 'authenticated' ];
         }
@@ -268,7 +255,33 @@ around 'add' => sub {
         push @ret, $ret;
     }
 
-    execute_hook( 'after_cart_add', $self, @args );
+    execute_hook( 'after_cart_add', $self, @ret );
+
+    return wantarray ? @ret : \@ret;
+};
+
+=head2 clear
+
+Removes all products from the cart.
+
+=cut
+
+around clear => sub {
+    my ( $orig, $self ) = @_;
+
+    execute_hook( 'before_cart_clear', $self );
+
+    $orig->( $self, @_ );
+
+    # delete all products from this cart
+    my $rs =
+      schema( $self->database )->resultset('Cart')
+      ->search( { 'cart_products.carts_id' => $self->id } )
+      ->search_related( 'cart_products', {} )->delete_all;
+
+    execute_hook( 'after_cart_clear', $self );
+
+    return;
 };
 
 =head2 load_saved_products
@@ -345,12 +358,69 @@ sub load_saved_products {
 
 }
 
+=head2 remove
+
+=cut
+
+around remove => sub {
+    my ( $orig, $self, $arg ) = @_;
+
+    execute_hook( 'before_cart_remove_validate', $self, $arg );
+
+    my $index = $self->product_index( sub { $_->sku eq $arg } );
+
+    die "Product sku not found in cart: $arg." unless $index >= 0;
+
+    execute_hook( 'before_cart_remove', $self, $arg );
+
+    my $ret = $orig->( $self, $arg );
+
+    my $cp = schema( $self->database )->resultset('CartProduct')->find(
+        {
+            carts_id => $self->id,
+            sku      => $ret->sku
+        }
+    );
+    $cp->delete;
+
+    execute_hook( 'after_cart_remove', $self, $arg );
+
+    return $ret;
+};
+
+=head2 rename
+
+Rename this cart.
+
+Arguments: new name
+
+Returns: cart object
+
+=cut
+
+around rename => sub {
+    my ( $orig, $self, $new_name ) = @_;
+
+    my $old_name = $self->name;
+
+    execute_hook( 'before_cart_rename', $self, $old_name, $new_name );
+
+    my $ret = $orig->( $self, $new_name );
+
+    schema( $self->database )->resultset('Cart')->find( $self->id )
+      ->update( { name => $new_name } );
+
+    execute_hook( 'after_cart_rename', $ret, $old_name, $new_name );
+
+    return $ret;
+};
+
 sub _find_and_update {
     my ( $self, $sku, $new_product ) = @_;
 
     my $cp = schema( $self->database )->resultset('CartProduct')->find(
         {
-            carts_id => $self->{id},
+            carts_id => $self->id,
             sku      => $sku
         }
     );
@@ -358,118 +428,174 @@ sub _find_and_update {
     $cp->update($new_product);
 }
 
-# hook methods
-sub _after_cart_update {
-    my ( $self, @args ) = @_;
-    my ( $product, $new_product, $count );
+=head2 set_sessions_id
 
-    unless ( $self eq $args[0] ) {
+Writer method for L<Interchange6::Cart/sessions_id>.
 
-        # not our cart
-        return;
+=cut
+
+around set_sessions_id => sub {
+    my ( $orig, $self, $arg ) = @_;
+
+    execute_hook( 'before_cart_set_sessions_id', $self, \$arg );
+
+    my $ret = $orig->( $self, $arg );
+
+    debug( "Change sessions_id of cart " . $self->id . " to: ", $arg );
+
+    if ( $self->id ) {
+
+        # cart is already in database so update sessions_id there
+        schema( $self->database )->resultset('Cart')->find( $self->id )
+          ->update($arg);
     }
 
-    $product     = $args[1];
-    $new_product = $args[2];
+    execute_hook( 'after_cart_set_sessions_id', $ret, \$arg );
 
-    $self->_find_and_update( $product->{sku}, $new_product );
-}
+    return $ret;
+};
 
-sub _after_cart_remove {
-    my ( $self, @args ) = @_;
-    my ($product);
+=head2 set_users_id
 
-    unless ( $self eq $args[0] ) {
+=cut
 
-        # not our cart
-        return;
+around set_users_id => sub {
+    my ( $orig, $self, $arg ) = @_;
+
+    execute_hook( 'before_cart_set_users_id', $self, \$arg );
+
+    debug("Change users_id of cart " . $self->id . " to: $arg");
+
+    my $ret = $orig->( $self, $arg );
+
+    if ( $self->id ) {
+        # cart is already in database so update
+        schema( $self->database )->resultset('Cart')->find( $self->id )
+          ->update( { users_id => $arg } );
     }
 
-    $product = $args[1];
+    execute_hook( 'after_cart_set_users_id', $ret, \$arg );
 
-    my $cp = schema( $self->database )->resultset('CartProduct')->find(
-        {
-            carts_id => $self->{id},
-            sku      => $product->{sku}
+    return $ret;
+};
+
+=head2 update
+
+Update quantity of products in the cart.
+
+Parameters are pairs of SKUs and quantities, e.g.
+
+  $cart->update(9780977920174 => 5,
+                9780596004927 => 3);
+
+Triggers before_cart_update and after_cart_update hooks.
+
+A quantity of zero is equivalent to removing this product,
+so in this case the remove hooks will be invoked instead
+of the update hooks.
+
+Returns updated products that are still in the cart. Products removed
+via quantity 0 or products for which quantity has not changed will not
+be returned.
+
+=cut
+
+around update => sub {
+    my ( $orig, $self, @args ) = @_;
+    my ( @products, $product, $new_product, $count );
+
+  ARGS: while ( @args > 0 ) {
+
+        my $sku = shift @args;
+        my $qty = shift @args;
+
+        die "Bad quantity argument to update: $qty" unless $qty =~ /^\d+$/;
+
+        if ( $qty == 0 ) {
+
+            # do remove instead of update
+            $self->remove($sku);
+            next ARGS;
         }
-    );
-    $cp->delete;
-}
 
-sub _after_cart_rename {
-    my ( $self, @args ) = @_;
+        execute_hook( 'before_cart_update', $self, $sku, $qty );
 
-    unless ( $self eq $args[0] ) {
+        my $ret = $orig->( $self, $sku => $qty );
 
-        # not our cart
-        return;
+        $self->_find_and_update( $sku, { quantity => $qty } );
+
+        execute_hook( 'after_cart_update', $ret, $sku, $qty );
     }
+};
 
-    schema( $self->database )->resultset('Cart')->find( $self->id )
-      ->update( { name => $args[2] } );
-}
+=head1 HOOKS
 
-sub _after_cart_clear {
-    my ( $self, @args ) = @_;
+The following hooks are available:
 
-    unless ( $self eq $args[0] ) {
+=over 4
 
-        # not our cart
-        return;
-    }
+=item before_cart_add_validate
 
-    # delete all products from this cart
-    my $rs =
-      schema( $self->database )->resultset('Cart')
-      ->search( { 'cart_products.carts_id' => $self->id } )
-      ->search_related( 'cart_products', {} )->delete_all;
-}
+Called in L</add> for items added as hash(ref)s. Not called for products passed into L</add> that are already L<Interchange6::Cart::Product> objects.
 
-sub _after_cart_set_users_id {
-    my ( $self, @args ) = @_;
+Receives: $cart, \%args
 
-    unless ( $self eq $args[0] ) {
+=item before_cart_add
 
-        # not our cart
-        return;
-    }
+Called in L</add> immediately before the Interchange6::Cart::Product is added to the cart.
 
-    # skip if cart is not yet stored in the database
-    return unless $self->id;
+Receives: $cart, $product
 
-    # change users_id
-    my $data = $args[1];
+=item after_cart_add
 
-    Dancer::Logger::debug( "Change users_id of $self->id to: ", $data );
+Called in L</add> after product has been added to the cart.
 
-    schema( $self->database )->resultset('Cart')->find( $self->id )
-      ->update($data);
-}
+Receives: $cart, $product
 
-sub _after_cart_set_sessions_id {
-    my ( $self, @args ) = @_;
+=item before_cart_remove_validate
 
-    unless ( $self eq $args[0] ) {
+Called at start of L</remove> before arg has been validated.
 
-        # not our cart
-        return;
-    }
+Receives: $cart, $sku
 
-    # skip if cart is not yet stored in the database
-    return unless $self->{id};
+=item before_cart_remove
 
-    # change sessions_id
-    my $data = $args[1];
+Called in L</remove> before product is removed from cart.
 
-    Dancer::Logger::debug( "Change sessions_id of $self->{id} to: ", $data );
+Receives: $cart, $product
 
-    schema( $self->database )->resultset('Cart')->find( $self->{id} )
-      ->update($data);
-}
+=item after_cart_remove
 
-=head1 AUTHOR
+Called in L</remove> after product has been removed from cart.
 
-Stefan Hornburg (Racke), <racke@linuxia.de>
+Receives: $cart, $product
+
+=item before_cart_update
+
+=item after_cart_update
+
+=item before_cart_clear
+
+=item after_cart_clear
+
+=item before_cart_set_users_id
+
+=item after_cart_set_users_id
+
+=item before_cart_set_sessions_id
+
+=item after_cart_set_sessions_id
+
+=item before_cart_rename
+
+=item after_cart_rename
+
+=back
+
+=head1 AUTHORS
+
+ Stefan Hornburg (Racke), <racke@linuxia.de>
+ Peter Mottram (SysPete), <peter@sysnix.com>
 
 =head1 LICENSE AND COPYRIGHT
 

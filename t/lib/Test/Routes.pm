@@ -262,41 +262,51 @@ test 'route tests' => sub {
     response_status_is $resp => 200, 'status is ok';
     response_content_like $resp => qr/cart_subtotal="92.95"/,
       'cart_subtotal is 92.95';
-    response_content_like $resp => qr/cart=.+os28005:Trim Brush:5:8.99:/,
+    response_content_like $resp => qr/cart=.+os28005:Trim Brush:5:8.99:8.99:/,
       'found qty 5 os28005 @ 8.99 in cart';
 
+    # authenticated user should get selling_price of 8.20
+    # total is 48 for ergo rollers plus 82 for trim brushes = 130
     %form = ( sku => 'os28005', quantity => 5 );
     lives_ok { $resp = dancer_response( POST => '/cart', { body => {%form} } ) }
     "POST /cart add 5 Trim Brushes";
     response_status_is $resp => 200, 'status is ok';
-    response_content_like $resp => qr/cart_subtotal="132.90"/,
-      'cart_subtotal is 132.90'
-      or diag "subtotal of 137.90 means price modifier has not been applied";
-    response_content_like $resp => qr/cart=.+os28005:Trim Brush:10:8.49:/,
-      'found qty 10 os28005 @ 8.49 in cart';
+    response_content_like $resp => qr/cart_subtotal="130.00"/,
+      'cart_subtotal is 130.00';
+    response_content_like $resp => qr/cart=.+os28005:Trim Brush:10:8.99:8.20:/,
+      'found qty 10 os28005 @ 8.20 in cart';
 
-    #lives_ok( sub { $user->add_to_roles({ name => 'trade
+    # add trade role to user
+    lives_ok( sub { $user->add_to_roles( { name => 'trade' } ) },
+        "Add user to role trade" );
 
-};
-1;
-__END__
+    # trade user should get selling_price of 7.80
+    # total is 48 for ergo rollers plus 78 for trim brushes = 126
+    lives_ok( sub { $resp = dancer_response( GET => '/cart' ) }, "GET /cart" );
+    response_status_is $resp => 200, 'status is ok';
+    response_content_like $resp => qr/cart_subtotal="126.00"/,
+      'cart_subtotal is 126.00';
+    response_content_like $resp => qr/cart=.+os28005:Trim Brush:10:8.99:7.80:/,
+      'found qty 10 os28005 @ 7.80 in cart';
+
     # checkout
 
     lives_ok { $resp = dancer_response GET => '/checkout' } "GET /checkout";
 
     response_status_is $resp => 200, 'status is ok';
-    response_content_like $resp => qr/cart_subtotal="48.00"/,
-      'cart_subtotal is 48.00';
-    response_content_like $resp => qr/cart_total="48.00"/,
-      'cart_total is 48.00';
+    response_content_like $resp => qr/cart_subtotal="126.00"/,
+      'cart_subtotal is 126.00';
+    response_content_like $resp => qr/cart_total="126.00"/,
+      'cart_total is 126.00';
     response_content_like $resp =>
-      qr/cart="os28004-CAM-BLK:Ergo Roller:2:16.*?,os28004-CAM-WHT:Ergo Roller:1:16/,
+      qr/cart=".*:Ergo Roller:2:16.*?,os28004-CAM-WHT:Ergo Roller:1:16/,
       'found 2 ergo roller variants at checkout';
 
     # logout
 
-    read_logs;    # clear logs
     lives_ok { $resp = dancer_response GET => '/logout' } "GET /logout";
+    response_status_is $resp => 302, 'status is ok';
+
     response_redirect_location_is $resp => 'http://localhost/',
       "Redirected to /";
 
@@ -312,9 +322,9 @@ __END__
 
     lives_ok { $resp = dancer_response GET => '/cart' } "GET /cart";
 
-    response_status_is $resp    => 200,                'status is ok';
+    response_status_is $resp    => 200,               'status is ok';
     response_content_like $resp => qr/cart_total="0/, 'cart_total is 0';
-    response_content_like $resp => qr/cart=""/,        'cart is empty';
+    response_content_like $resp => qr/cart=""/,       'cart is empty';
 
 };
 
