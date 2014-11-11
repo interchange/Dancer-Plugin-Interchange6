@@ -79,7 +79,7 @@ sub account_routes {
             session logged_in_user_realm => $realm;
 
             if (! $current_cart->users_id) {
-                $current_cart->users_id($user->id);
+                $current_cart->set_users_id($user->id);
             }
 
             # now pull back in old cart items from previous authenticated
@@ -107,7 +107,7 @@ sub account_routes {
         my $cart = cart;
         if ( $cart->count > 0 ) {
             # save our items for next login
-            shop_cart->sessions_id(undef);
+            shop_cart->set_sessions_id(undef);
         }
         # any empty cart with sessions_id matching our session id will be
         # destroyed here

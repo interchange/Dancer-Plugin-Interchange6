@@ -37,8 +37,8 @@ hook before_cart_display => sub {
         ",",
         sort map {
             join( ':',
-                $_->sku, $_->name, $_->quantity, $_->price, $_->selling_price,
-                $_->uri )
+                $_->sku, $_->name, $_->quantity, sprintf("%.2f", $_->price),
+                sprintf( "%.2f", $_->selling_price ), $_->uri )
         } @{ $tokens->{cart} }
     );
 };
@@ -50,8 +50,8 @@ hook before_checkout_display => sub {
         ",",
         sort map {
             join( ':',
-                $_->sku, $_->name, $_->quantity, $_->price, $_->selling_price,
-                $_->uri )
+                $_->sku, $_->name, $_->quantity, sprintf("%.2f", $_->price),
+                sprintf( "%.2f", $_->selling_price ), $_->uri )
         } @{ $tokens->{cart} }
     );
 };

@@ -84,20 +84,8 @@ sub cart_route {
                     $quantity = param('quantity');
                 }
 
-                # here we should have all Interchange6::Cart::Product
-                # attributes except id, subtotal and total:
-                $cart_input = {
-                    name          => $cart_product->name,
-                    price         => $cart_product->price,
-                    quantity      => $quantity,
-                    sku           => $cart_product->sku,
-                    uri           => $cart_product->uri,
-                };
-                $cart_input
-
-                debug "Cart input: ", $cart_input;
-
-                $cart_item = $cart->add($cart_input);
+                $cart_item = $cart->add(
+                    { sku => $cart_product->sku, quantity => $quantity } );
 
                 unless ($cart_item) {
                     warning "Cart error: ", $cart->error;

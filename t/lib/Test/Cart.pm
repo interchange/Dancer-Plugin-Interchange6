@@ -42,14 +42,8 @@ test 'cart tests' => sub {
     $name = $cart->name;
     ok( $name eq 'main', "Testing default name." );
 
-    $name = $cart->name('discount');
+    $name = $cart->rename('discount');
     ok( $name eq 'discount', "Testing custom name." );
-
-    # Add products for testing
-    shop_product->create( { sku => 'ABC', name => 'name', description => '' } );
-    shop_product->create( { sku => 'DEF', name => 'name', description => '' } );
-    shop_product->create( { sku => 'KLM', name => 'name', description => '' } );
-    shop_product->create( { sku => '123', name => 'name', description => '' } );
 
     # Products
     $cart     = cart('new');
@@ -78,72 +72,140 @@ test 'cart tests' => sub {
         }
     }
 
-    throws_ok { $cart->add($product) }
+    throws_ok { $cart->add() }
     qr/Attempt to add product to cart without sku failed/,
-      "add empty product";
+      "add with no args";
 
-    $product->{sku} = 'ABC';
-    throws_ok { $cart->add($product) }
-    qr/isa check for "price" failed: is not a positive numeric/,
-      "Testing product with SKU only";
+    throws_ok { $cart->add(undef) }
+    qr/Attempt to add product to cart without sku failed/,
+      "add with undef arg";
 
-    $product->{name} = 'Foobar';
-    throws_ok { $cart->add($product) }
-    qr/isa check for "price" failed: is not a positive numeric/,
-      "Testing product with SKU and name.";
+    throws_ok { $cart->add('this sku does not exist') }
+    qr/Product with sku .+ does not exist/, "add sku that does not exist in db";
 
-    $product->{price} = '42';
-
-    lives_ok { $ret = $cart->add('os28005') } "Testing adding correct product."
-      || diag "Cart error: $cart->error";
-    isa_ok( $ret, 'Interchange6::Cart::Product' );
-    cmp_ok( $ret->sku,   'eq', 'ABC',    "Check sku of returned product" );
-    cmp_ok( $ret->name,  'eq', 'Foobar', "Check name of returned product" );
-    cmp_ok( $ret->price, '==', 42,       "Check price of returned product" );
-    cmp_ok( $ret->quantity, '==', 1, "Check quantity of returned product" );
-
+    # add os28005 as scalar
+    lives_ok { $ret = $cart->add('os28005') } "add single scalar sku";
+    isa_ok( $ret->[0], 'Interchange6::Cart::Product' );
+    cmp_ok( $ret->[0]->sku, 'eq', 'os28005', "Check sku of returned product" );
+    cmp_ok( $ret->[0]->name, 'eq', 'Trim Brush',
+        "Check name of returned product" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->price ),
+        '==', 8.99, "Check price of returned product" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->selling_price ),
+        '==', 8.99, "Check price of returned product" );
+    cmp_ok( $ret->[0]->quantity, '==', 1,
+        "Check quantity of returned product is 1" );
     cmp_ok( $cart->count, '==', 1,
         "Check number of products in the cart is 1" );
+    cmp_ok( sprintf( "%.2f", $cart->subtotal ),
+        '==', 8.99, "cart subtotal is 8.99" );
+    cmp_ok( sprintf( "%.2f", $cart->total ),
+        '==', 8.99, "cart total is 8.99" );
 
-    # Combine products
-    $product = { sku => 'ABC', name => 'Foobar', price => 5 };
-    lives_ok { $ret = $cart->add($product) }
-    "Add another product to cart with same SKU";
-    isa_ok( $ret, 'Interchange6::Cart::Product' );
+    # add os28005 again as hashref
+    lives_ok { $ret = $cart->add({ sku => 'os28005'}) }
+    "add single hashref without quantity of same product";
+    isa_ok( $ret->[0], 'Interchange6::Cart::Product' );
+    cmp_ok( $ret->[0]->sku, 'eq', 'os28005', "Check sku of returned product" );
+    cmp_ok( $ret->[0]->name, 'eq', 'Trim Brush',
+        "Check name of returned product" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->price ),
+        '==', 8.99, "Check price of returned product" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->selling_price ),
+        '==', 8.99, "Check price of returned product" );
+    cmp_ok( $ret->[0]->quantity, '==', 2,
+        "Check quantity of returned product is 2" );
     cmp_ok( $cart->count, '==', 1,
         "Check number of products in the cart is 1" );
+    cmp_ok( sprintf( "%.2f", $cart->subtotal ),
+        '==', 17.98, "cart subtotal is 17.98" );
+    cmp_ok( sprintf( "%.2f", $cart->total ),
+        '==', 17.98, "cart total is 17.98" );
 
-    $product = { sku => 'DEF', name => 'Foobar', price => 5 };
-    lives_ok { $ret = $cart->add($product) } "Add a different product to cart";
-    isa_ok( $ret, 'Interchange6::Cart::Product' );
+    # add qty 8 of os28005 as hashref so qty 10 PriceModifier for anonymous
+    # should now apply
+    lives_ok { $ret = $cart->add( { sku => 'os28005', quantity => 8 } ) }
+    "add single hashref with quantity 8 of same product";
+    isa_ok( $ret->[0], 'Interchange6::Cart::Product' );
+    cmp_ok( $ret->[0]->sku, 'eq', 'os28005', "Check sku of returned product" );
+    cmp_ok( $ret->[0]->name, 'eq', 'Trim Brush',
+        "Check name of returned product" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->price ),
+        '==', 8.99, "Check price of returned product" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->selling_price ),
+        '==', 8.49, "Check price of returned product" );
+    cmp_ok( $ret->[0]->quantity, '==', 10,
+        "Check quantity of returned product is 10" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->total), '==', 84.90,
+        "Check total of returned product is 84.90" );
+    cmp_ok( $cart->count, '==', 1,
+        "Check number of products in the cart is 1" );
+    cmp_ok( sprintf( "%.2f", $cart->subtotal ),
+        '==', 84.90, "cart subtotal is 84.90" );
+    cmp_ok( sprintf( "%.2f", $cart->total ),
+        '==', 84.90, "cart total is 84.90" );
+
+    # add qty 2 of os28006
+    lives_ok { $ret = $cart->add( { sku => 'os28006', quantity => 2 } ) }
+    "add single hashref with quantity 2 of os28006";
+    isa_ok( $ret->[0], 'Interchange6::Cart::Product' );
+    cmp_ok( $ret->[0]->sku, 'eq', 'os28006', "Check sku of returned product" );
+    cmp_ok( $ret->[0]->name, 'eq', 'Painters Brush Set',
+        "Check name of returned product" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->price ),
+        '==', 29.99, "Check price of returned product" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->selling_price ),
+        '==', 29.99, "Check price of returned product" );
+    cmp_ok( $ret->[0]->quantity, '==', 2,
+        "Check quantity of returned product is 2" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->total), '==', 59.98,
+        "Check total of returned product is 59.98" );
     cmp_ok( $cart->count, '==', 2,
         "Check number of products in the cart is 2" );
+    cmp_ok( sprintf( "%.2f", $cart->subtotal ),
+        '==', 144.88, "cart subtotal is 144.88" );
+    cmp_ok( sprintf( "%.2f", $cart->total ),
+        '==', 144.88, "cart total is 144.88" );
 
     # Update product(s)
-    lives_ok { $cart->update( ABC => 2 ) } "Change quantity of ABC to 2";
-    cmp_ok( $cart->count, '==', 2, "Testing count after update of ABC." );
 
-    cmp_ok( $cart->quantity, '==', 3, "Testing quantity after update of ABC." );
+    lives_ok { $cart->update( os28006 => 5 ) }
+    "Change quantity of os28006 to 5";
+    cmp_ok( $cart->count, '==', 2, "cart count after update of os28006." );
+    cmp_ok( $cart->quantity, '==', 15,
+        "cart quantity after update of os28006." );
+    cmp_ok( sprintf( "%.2f", $cart->subtotal ),
+        '==', 234.85, "cart subtotal is 234.85" );
+    cmp_ok( sprintf( "%.2f", $cart->total ),
+        '==', 234.85, "cart total is 234.85" );
 
-    lives_ok { $cart->update( ABC => 1, DEF => 4 ) }
-    "Update qty of ABC and DEF";
+    lives_ok { $cart->update( os28005 => 20, os28006 => 4 ) }
+    "Update qty of os28005 and os28006";
     cmp_ok( $cart->count, '==', 2,
-        "Testing count after update of ABC and DEF." );
-    cmp_ok( $cart->quantity, '==', 5,
-        "Testing quantity after update of ABC and DEF." );
+        "cart count after update of os28005 and os28006." );
+    cmp_ok( $cart->quantity, '==', 24,
+        "cart quantity after update of os28005 and os28006." );
+    cmp_ok( sprintf( "%.2f", $cart->subtotal ),
+        '==', 289.76, "cart subtotal is 289.76" );
+    cmp_ok( sprintf( "%.2f", $cart->total ),
+        '==', 289.76, "cart total is 289.76" );
 
-    lives_ok { $cart->update( ABC => 0 ) } "Update quantity of ABC to 0.";
-    cmp_ok( $cart->count, '==', 1, "Testing count after update of ABC to 0." );
-    cmp_ok( $cart->quantity, '==', 4,
-        "Testing quantity after update of ABC to 0." );
+    # product removal
 
-    # Cart removal
+    lives_ok { $cart->update( os28006 => 0 ) }
+    "Update quantity of os28006 to 0.";
+    cmp_ok( $cart->count, '==', 1, "cart count after update of os28006 to 0." );
+    cmp_ok( $cart->quantity, '==', 20,
+        "cart quantity after update of os28006 to 0." );
+    cmp_ok( sprintf( "%.2f", $cart->total ),
+        '==', 169.80, "cart total is 169.80" );
+
     lives_ok(
         sub {
             hook before_cart_remove => sub {
-                my ( $cart, $product ) = @_;
+                my ( $cart, $sku ) = @_;
 
-                if ( $product->sku eq '123' ) {
+                if ( $sku eq 'os28005' ) {
                     die 'Product not removed due to hook.';
                 }
               }
@@ -151,71 +213,92 @@ test 'cart tests' => sub {
         "Add before_cart_remove hook"
     );
 
-    $product = { sku => 'DEF', name => 'Foobar', price => 5 };
-    lives_ok { $cart->add($product) } "Add product DEF";
-
-    $product = { sku => '123', name => 'Foobar', price => 5 };
-    lives_ok { $cart->add($product) } "Add product 123";
-
-    cmp_ok( $cart->count, '==', 2, "Testing count is 2." );
-
     throws_ok(
-        sub { $cart->remove('123') },
+        sub { $cart->remove('os28005') },
         qr/Product not removed due to hook/,
-        "Try to remove product 123"
+        "fail to remove product os28005 using remove due to hook"
     );
 
-    cmp_ok( $cart->count, '==', 2, "Testing count is still 2." );
-
-    lives_ok { $cart->remove('DEF') } "Try to remove product DEF";
-
-    cmp_ok( $cart->count, '==', 1, "Testing count after removal of DEF." );
-
-    # Calculating total
-    lives_ok { $cart->clear } "Clear cart";
-    cmp_ok( $cart->total, '==', 0, "Cart total is 0" );
-
-    $product = { sku => 'GHI', name => 'Foobar', price => 2.22, quantity => 3 };
     throws_ok(
-        sub { $ret = $cart->add($product) },
-        qr/Item GHI doesn't exist/,
-        "Add product GHI fails - not in DB"
+        sub { $cart->update(os28005 => 0) },
+        qr/Product not removed due to hook/,
+        "fail to remove product os28005 using update due to hook"
     );
 
-    $product = { sku => 'KLM', name => 'Foobar', price => 3.34, quantity => 1 };
-    lives_ok { $ret = $cart->add($product) } "Add product KLM";
-    isa_ok( $ret, 'Interchange6::Cart::Product' );
-
-    cmp_ok( $cart->total, '==', 10, "Cart total for GHI and KLM" );
+    cmp_ok( $cart->count, '==', 1, "cart count is still 1" );
+    cmp_ok( $cart->quantity, '==', 20, "cart quantity is still 20" );
+    cmp_ok( sprintf( "%.2f", $cart->total ),
+        '==', 169.80, "cart total is still 169.80" );
 
     # Hooks
+
     lives_ok {
         hook 'before_cart_add' => sub {
-            my ( $cart, $product ) = @_;
-
-            if ( $product->sku eq 'KLM' ) {
-                die 'Test error';
+            my ( $cart, @products ) = @_;
+            foreach my $product (@products) {
+                if ( $product->{sku} eq 'os28007' ) {
+                    die 'Test error';
+                }
             }
-          }
+        }
     }
-    "Add price > 3 hook";
+    "hook to prevent add of sku os28007";
 
     lives_ok { $cart->clear } "Clear cart";
+    cmp_ok( $cart->count, '==', 0, "cart count is 0" );
+    cmp_ok( $cart->quantity, '==', 0, "cart quantity is 0" );
+    cmp_ok( $cart->subtotal, '==', 0, "cart subtotal is 0" );
+    cmp_ok( $cart->total, '==', 0, "cart total is 0" );
 
-    $product = { sku => 'KLM', name => 'Foobar', price => 3.34, quantity => 1 };
-    throws_ok( sub { $ret = $cart->add($product) },
-        qr/Test error/, "Add product with proce 3.34" );
+    throws_ok( sub { $ret = $cart->add('os28007') },
+        qr/Test error/, "fail add product with sku os28007 due to hook" );
 
-    cmp_ok( $cart->count, '==', 0, "Cart after adding KLM is empty" );
-
-    cmp_ok( $cart->id,    '==', 2,            "cart id is 2" );
+    cmp_ok( $cart->count, '==', 0, "cart is still empty" );
+    cmp_ok( $cart->id,    '==', 2, "cart id is still 2" );
 
     lives_ok {
         hook 'before_cart_add' => sub {
-            my ( $cart, $product ) = @_;
-          }
+            my ( $cart, @products ) = @_;
+            foreach my $product (@products) {
+                if ( $product->{price} > 20 ) {
+                    die 'Test error';
+                }
+            }
+        }
     }
-    "Add sku eq KLM hook";
+    "hook to prevent add of product with price > 20";
+
+    lives_ok {
+        hook 'before_cart_add' => sub {
+            my ( $cart, @products ) = @_;
+            debug "added to cart id "
+              . $cart->id
+              . " these skus: "
+              . join( ", ", map { $_->{sku} } @products );
+        }
+    }
+    "hook to debug log skus of added products";
+
+    throws_ok( sub { $ret = $cart->add('os28062') },
+        qr/Test error/, "fail add product with sku os28062 due to price hook" );
+    cmp_ok( $cart->count, '==', 0, "cart count is 0" );
+
+    $log = pop @{&read_logs};
+    ok( !defined $log, "nothing in the logs" );
+
+    lives_ok( sub { $ret = $cart->add('os28064') },
+        "add product with sku os28064 not prevented by price hook" );
+    cmp_ok( $cart->count, '==', 1, "cart count is 1" );
+
+    $log = pop @{&read_logs};
+    cmp_deeply(
+        $log,
+        {
+            level   => "debug",
+            message => "added to cart id 2 these skus: os28064"
+        },
+        "debug message from hook found in logs"
+    ) or diag Dumper($log);
 
     # Seed
 
