@@ -10,7 +10,6 @@ use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::DBIC;
 use Dancer::Test;
 
-use Data::Dumper;
 use DateTime;
 
 test 'deploy tests' => sub {

@@ -234,8 +234,8 @@ test 'cart tests' => sub {
 
     lives_ok {
         hook 'before_cart_add' => sub {
-            my ( $cart, @products ) = @_;
-            foreach my $product (@products) {
+            my ( $cart, $products ) = @_;
+            foreach my $product (@$products) {
                 if ( $product->{sku} eq 'os28007' ) {
                     die 'Test error';
                 }
@@ -258,8 +258,8 @@ test 'cart tests' => sub {
 
     lives_ok {
         hook 'before_cart_add' => sub {
-            my ( $cart, @products ) = @_;
-            foreach my $product (@products) {
+            my ( $cart, $products ) = @_;
+            foreach my $product (@$products) {
                 if ( $product->{price} > 20 ) {
                     die 'Test error';
                 }
@@ -270,11 +270,11 @@ test 'cart tests' => sub {
 
     lives_ok {
         hook 'before_cart_add' => sub {
-            my ( $cart, @products ) = @_;
+            my ( $cart, $products ) = @_;
             debug "added to cart id "
               . $cart->id
               . " these skus: "
-              . join( ", ", map { $_->{sku} } @products );
+              . join( ", ", map { $_->{sku} } @$products );
         }
     }
     "hook to debug log skus of added products";
