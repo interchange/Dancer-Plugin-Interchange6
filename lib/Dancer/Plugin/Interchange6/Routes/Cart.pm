@@ -47,8 +47,8 @@ sub cart_route {
                 $cart->remove( param('remove') );
             }
             catch {
-                warning "Cart add error: $_";
-                push @errors, "Failed to add product to cart: $_";
+                warning "Cart remove error: $_";
+                push @errors, "Failed to remove product from cart: $_";
             };
         }
 
