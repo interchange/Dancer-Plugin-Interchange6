@@ -30,6 +30,9 @@ use namespace::clean;
 
 =head1 ATTRIBUTES
 
+See L<Interchange6::Cart/ATTRIBUTES> for a full list of attributes
+inherited by this module.
+
 =head2 database
 
 The database name as defined in the L<Dancer::Plugin::DBIC> configuration.
@@ -56,11 +59,16 @@ has '+sessions_id' => ( required => 1, );
 
 =head1 METHODS
 
+See L<Interchange6::Cart/METHODS> for a full list of methods inherited by
+this module.
+
 =head2 get_sessions_id
 
 =head2 BUILDARGS
 
-Sets default values for name, database and sessions_id if not given and loads other attribute values from DB cart. If DB cart does not exist then create new one.
+Sets default values for name, database and sessions_id if not given and
+loads other attribute values from DB cart. If DB cart does not exist then
+create new one.
 
 =cut
 
@@ -213,7 +221,7 @@ around 'add' => sub {
         push @products, $product;
     }
 
-    execute_hook( 'before_cart_add', $self, @products );
+    execute_hook( 'before_cart_add', $self, \@products );
 
     # add products to cart
 
@@ -255,7 +263,7 @@ around 'add' => sub {
         push @ret, $ret;
     }
 
-    execute_hook( 'after_cart_add', $self, @ret );
+    execute_hook( 'after_cart_add', $self, \@ret );
 
     return wantarray ? @ret : \@ret;
 };
@@ -360,6 +368,9 @@ sub load_saved_products {
 
 =head2 remove
 
+Remove single product from the cart. Takes SKU of product to identify
+the product.
+
 =cut
 
 around remove => sub {
@@ -390,7 +401,7 @@ around remove => sub {
 
 =head2 rename
 
-Rename this cart.
+Rename this cart. This is the writer method for L<Interchange6::Cart/name>.
 
 Arguments: new name
 
@@ -437,7 +448,7 @@ Writer method for L<Interchange6::Cart/sessions_id>.
 around set_sessions_id => sub {
     my ( $orig, $self, $arg ) = @_;
 
-    execute_hook( 'before_cart_set_sessions_id', $self, \$arg );
+    execute_hook( 'before_cart_set_sessions_id', $self, $arg );
 
     my $ret = $orig->( $self, $arg );
 
@@ -450,19 +461,21 @@ around set_sessions_id => sub {
           ->update($arg);
     }
 
-    execute_hook( 'after_cart_set_sessions_id', $ret, \$arg );
+    execute_hook( 'after_cart_set_sessions_id', $ret, $arg );
 
     return $ret;
 };
 
 =head2 set_users_id
 
+Writer method for L<Interchange6::Cart/users_id>.
+
 =cut
 
 around set_users_id => sub {
     my ( $orig, $self, $arg ) = @_;
 
-    execute_hook( 'before_cart_set_users_id', $self, \$arg );
+    execute_hook( 'before_cart_set_users_id', $self, $arg );
 
     debug("Change users_id of cart " . $self->id . " to: $arg");
 
@@ -474,7 +487,7 @@ around set_users_id => sub {
           ->update( { users_id => $arg } );
     }
 
-    execute_hook( 'after_cart_set_users_id', $ret, \$arg );
+    execute_hook( 'after_cart_set_users_id', $ret, $arg );
 
     return $ret;
 };
@@ -536,21 +549,39 @@ The following hooks are available:
 
 =item before_cart_add_validate
 
-Called in L</add> for items added as hash(ref)s. Not called for products passed into L</add> that are already L<Interchange6::Cart::Product> objects.
+Executed in L</add> before arguments are validated as being valid. Hook
+receives the following arguments:
 
 Receives: $cart, \%args
 
+The args are those that were passed to L<add>.
+
+Example:
+
+    hook before_cart_add_validate => sub {
+        my ( $cart, $args ) = @_;
+        foreach my $arg ( @$args ) {
+            my $sku = ref($arg) eq 'HASH' ? $arg->{sku} : $arg;
+            die "bad product" if $sku eq "bad sku";
+        }
+    }
+
 =item before_cart_add
 
-Called in L</add> immediately before the Interchange6::Cart::Product is added to the cart.
+Called in L</add> immediately before the products are added to the cart.
 
-Receives: $cart, $product
+Receives: $cart, \@products
+
+The products arrary ref contains simple hash references that will be passed
+to L<Interchange6::Cart::Product/new>.
 
 =item after_cart_add
 
-Called in L</add> after product has been added to the cart.
+Called in L</add> after products have been added to the cart.
 
-Receives: $cart, $product
+Receives: $cart, \@product
+
+The products arrary ref contains <Interchange6::Cart::Product>s.
 
 =item before_cart_remove_validate
 
@@ -560,35 +591,75 @@ Receives: $cart, $sku
 
 =item before_cart_remove
 
-Called in L</remove> before product is removed from cart.
+Called in L</remove> before validated product is removed from cart.
 
-Receives: $cart, $product
+Receives: $cart, $sku
 
 =item after_cart_remove
 
 Called in L</remove> after product has been removed from cart.
 
-Receives: $cart, $product
+Receives: $cart, $sku
 
 =item before_cart_update
 
+Executed for each pair of sku/quantity passed to L<update> before the update is performed.
+
+Receives: $cart, $sku, $quantity
+
 =item after_cart_update
+
+Executed for each pair of sku/quantity passed to L<update> after the update is performed.
+
+Receives: $cart, $sku, $quantity
 
 =item before_cart_clear
 
+Executed in L</clear> before the clear is performed.
+
+Receives: $cart
+
 =item after_cart_clear
+
+Executed in L</clear> after the clear is performed.
+
+Receives: $cart
 
 =item before_cart_set_users_id
 
+Executed in L<set_users_id> before users_id is updated.
+
+Receives: $cart, $userid
+
 =item after_cart_set_users_id
+
+Executed in L<set_users_id> after users_id is updated.
+
+Receives: $cart, $userid
 
 =item before_cart_set_sessions_id
 
+Executed in L<set_sessions_id> before sessions_id is updated.
+
+Receives: $cart, $sessionid
+
 =item after_cart_set_sessions_id
+
+Executed in L<set_sessions_id> after sessions_id is updated.
+
+Receives: $cart, $sessionid
 
 =item before_cart_rename
 
+Executed in L</rename> before cart L<Interchange6::Cart/name> is updated.
+
+Receives: $cart, $old_name, $new_name
+
 =item after_cart_rename
+
+Executed in L</rename> after cart L<Interchange6::Cart/name> is updated.
+
+Receives: $cart, $old_name, $new_name
 
 =back
 
