@@ -107,7 +107,7 @@ sub cart_route {
         $values{cart_subtotal} = $cart->subtotal;
         $values{cart_total} = $cart->total;
         $values{cart} = $cart->products;
-        $values{cart_error} = join(". ", @errors);
+        $values{cart_error} = join(". ", @errors) if scalar @errors;
 
         # call before_cart_display route so template tokens
         # can be injected
