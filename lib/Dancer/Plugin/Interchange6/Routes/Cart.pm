@@ -5,6 +5,7 @@ use Dancer ':syntax';
 use Dancer::Plugin;
 use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::Auth::Extensible;
+use Try::Tiny;
 
 =head1 NAME
 
@@ -84,13 +85,14 @@ sub cart_route {
                     $quantity = param('quantity');
                 }
 
-                $cart_item = $cart->add(
-                    { sku => $cart_product->sku, quantity => $quantity } );
-
-                unless ($cart_item) {
-                    warning "Cart error: ", $cart->error;
-                    $values{cart_error} = $cart->error;
+                try {
+                    $cart_item = $cart->add(
+                        { sku => $cart_product->sku, quantity => $quantity } );
                 }
+                catch {
+                    warning "Cart add error: $_";
+                    $values{cart_error} = "Failed to add product to cart: $_";
+                };
             }
         }
 
