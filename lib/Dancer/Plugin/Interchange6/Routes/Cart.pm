@@ -29,7 +29,7 @@ sub cart_route {
     return sub {
         my %values;
         my ($input, $product, $cart, $cart_item, $cart_name, $cart_input,
-            $cart_product, $roles);
+            $cart_product, $roles, @errors);
 
         if ($cart_name = param('cart') && scalar($cart_name)) {
             $cart = cart($cart_name);
@@ -41,8 +41,15 @@ sub cart_route {
         debug "cart_route cart name: " . $cart->name;
 
         if ( param('remove') ) {
+
             # removing item from cart
-            $cart->remove( param('remove') );
+            try {
+                $cart->remove( param('remove') );
+            }
+            catch {
+                warning "Cart add error: $_";
+                push @errors, "Failed to add product to cart: $_";
+            };
         }
 
         if ($input = param('sku')) {
@@ -91,7 +98,7 @@ sub cart_route {
                 }
                 catch {
                     warning "Cart add error: $_";
-                    $values{cart_error} = "Failed to add product to cart: $_";
+                    push @errors, "Failed to add product to cart: $_";
                 };
             }
         }
@@ -100,6 +107,7 @@ sub cart_route {
         $values{cart_subtotal} = $cart->subtotal;
         $values{cart_total} = $cart->total;
         $values{cart} = $cart->products;
+        $values{cart_error} = join(". ", @errors);
 
         # call before_cart_display route so template tokens
         # can be injected
