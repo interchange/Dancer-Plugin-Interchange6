@@ -46,6 +46,8 @@ sub cart_route {
 
             try {
                 $cart->remove( param('remove') );
+                # if GET then URL now contains ugly query params so redirect
+                return redirect '/cart' if request->is_get;
             }
             catch {
                 warning "Cart remove error: $_";
