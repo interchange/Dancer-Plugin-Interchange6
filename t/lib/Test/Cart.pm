@@ -155,17 +155,17 @@ test 'cart tests' => sub {
     cmp_ok( sprintf( "%.2f", $ret->[0]->price ),
         '==', 29.99, "Check price of returned product" );
     cmp_ok( sprintf( "%.2f", $ret->[0]->selling_price ),
-        '==', 29.99, "Check price of returned product" );
+        '==', 24.99, "Check selling_price of returned product" );
     cmp_ok( $ret->[0]->quantity, '==', 2,
         "Check quantity of returned product is 2" );
-    cmp_ok( sprintf( "%.2f", $ret->[0]->total), '==', 59.98,
-        "Check total of returned product is 59.98" );
+    cmp_ok( sprintf( "%.2f", $ret->[0]->total), '==', 49.98,
+        "Check total of returned product is 49.98" );
     cmp_ok( $cart->count, '==', 2,
         "Check number of products in the cart is 2" );
     cmp_ok( sprintf( "%.2f", $cart->subtotal ),
-        '==', 144.88, "cart subtotal is 144.88" );
+        '==', 134.88, "cart subtotal is 134.88" );
     cmp_ok( sprintf( "%.2f", $cart->total ),
-        '==', 144.88, "cart total is 144.88" );
+        '==', 134.88, "cart total is 134.88" );
 
     # Update product(s)
 
@@ -175,9 +175,9 @@ test 'cart tests' => sub {
     cmp_ok( $cart->quantity, '==', 15,
         "cart quantity after update of os28006." );
     cmp_ok( sprintf( "%.2f", $cart->subtotal ),
-        '==', 234.85, "cart subtotal is 234.85" );
+        '==', 209.85, "cart subtotal is 209.85" );
     cmp_ok( sprintf( "%.2f", $cart->total ),
-        '==', 234.85, "cart total is 234.85" );
+        '==', 209.85, "cart total is 209.85" );
 
     lives_ok { $cart->update( os28005 => 20, os28006 => 4 ) }
     "Update qty of os28005 and os28006";
@@ -186,9 +186,9 @@ test 'cart tests' => sub {
     cmp_ok( $cart->quantity, '==', 24,
         "cart quantity after update of os28005 and os28006." );
     cmp_ok( sprintf( "%.2f", $cart->subtotal ),
-        '==', 289.76, "cart subtotal is 289.76" );
+        '==', 269.76, "cart subtotal is 269.76" );
     cmp_ok( sprintf( "%.2f", $cart->total ),
-        '==', 289.76, "cart total is 289.76" );
+        '==', 269.76, "cart total is 269.76" );
 
     # product removal
 
