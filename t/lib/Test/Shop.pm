@@ -60,7 +60,7 @@ test 'misc shop tests' => sub {
     my %review_data;
 
     %review_data = (
-        author => shop_user->first->id,
+        author_users_id => shop_user->first->id,
         title => 'test',
         content => 'Text review',
         rating => 2,
