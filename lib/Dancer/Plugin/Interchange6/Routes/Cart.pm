@@ -43,6 +43,7 @@ sub cart_route {
         if ( param('remove') ) {
 
             # removing item from cart
+
             try {
                 $cart->remove( param('remove') );
             }
@@ -51,97 +52,90 @@ sub cart_route {
                 push @errors, "Failed to remove product from cart: $_";
             };
         }
+        elsif ( param('update') && param('quantity') ) {
+
+            # update existing cart product
+
+            debug "Update "
+              . param('update')
+              . " with quantity "
+              . param('quantity');
+
+            try {
+                $cart->update( param('update') => param('quantity') );
+            }
+            catch {
+                warning "Update cart product error: $_";
+                push @errors, "Failed to update product in cart: $_";
+            };
+        }
 
         if ( $input = param('sku') ) {
 
-            # add new product or update existing cart product
+            # add new product
 
-            # we currently only support one product at a time so check it
+            # we currently only support one product at a time so check that
+            # the param is a scalar
 
             if ( ref($input) eq '' ) {
 
-                if ( param('update') && param('quantity') ) {
+                $product = shop_product($input);
 
-                    # update existing cart product
+                unless ( defined $product ) {
+                    warning "sku not found in POST /cart: $input";
+                    session shop_cart_error =>
+                      { message => "Product not found with sku: $input" };
+                    return redirect '/';
+                }
 
-                    try {
-                        $cart->update(
-                            {
-                                sku      => $input,
-                                quantity => param('quantity'),
-                            }
-                        );
+                # retrieve product attributes for possible variants
+                my $attr_ref = $product->attribute_iterator( hashref => 1 );
+                my %user_input;
+
+                if ( keys %$attr_ref ) {
+
+                    # find variant
+                    for my $name ( keys %$attr_ref ) {
+                        $user_input{$name} = param($name);
                     }
-                    catch {
-                        warning "Update cart product error: $_";
-                        push @errors, "Failed to update product in cart: $_";
-                    };
+
+                    debug "Attributes for $input: ", $attr_ref,
+                      ", user input: ", \%user_input;
+                    my %match_info;
+
+                    unless ( $cart_product =
+                        $product->find_variant( \%user_input, \%match_info ) )
+                    {
+                        warning "Variant not found for ", $product->sku;
+                        session shop_cart_error => {
+                            message => 'Variant not found.',
+                            info    => \%match_info
+                        };
+                        return redirect $product->uri;
+                    }
                 }
                 else {
-
-                    # add new product to cart
-
-                    $product = shop_product($input);
-
-                    unless ( defined $product ) {
-                        warning "sku not found in POST /cart: $input";
-                        session shop_cart_error =>
-                          { message => "Product not found with sku: $input" };
-                        return redirect '/';
-                    }
-
-                    # retrieve product attributes for possible variants
-                    my $attr_ref = $product->attribute_iterator( hashref => 1 );
-                    my %user_input;
-
-                    if ( keys %$attr_ref ) {
-
-                        # find variant
-                        for my $name ( keys %$attr_ref ) {
-                            $user_input{$name} = param($name);
-                        }
-
-                        debug "Attributes for $input: ", $attr_ref,
-                          ", user input: ", \%user_input;
-                        my %match_info;
-
-                        unless (
-                            $cart_product = $product->find_variant(
-                                \%user_input, \%match_info
-                            )
-                          )
-                        {
-                            warning "Variant not found for ", $product->sku;
-                            session shop_cart_error => {
-                                message => 'Variant not found.',
-                                info    => \%match_info
-                            };
-                            return redirect $product->uri;
-                        }
-                    }
-                    else {
-                        # product without variants
-                        $cart_product = $product;
-                    }
-
-                    my $quantity = 1;
-                    if ( param('quantity') ) {
-                        $quantity = param('quantity');
-                    }
-
-                    try {
-                        $cart->add(
-                            {
-                                sku      => $cart_product->sku,
-                                quantity => $quantity
-                            }
-                        );
-                    }
-                    catch {
-                        warning "Cart add error: $_";
-                        push @errors, "Failed to add product to cart: $_";
-                    };
+                    # product without variants
+                    $cart_product = $product;
                 }
+
+                my $quantity = 1;
+                if ( param('quantity') ) {
+                    $quantity = param('quantity');
+                }
+
+                try {
+                    $cart->add(
+                        {
+                            sku      => $cart_product->sku,
+                            quantity => $quantity
+                        }
+                    );
+                }
+                catch {
+                    warning "Cart add error: $_";
+                    push @errors, "Failed to add product to cart: $_";
+                };
             }
         }
 
