@@ -1,5 +1,30 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.060_03 Thu Nov 27 15:15:18 2014 CET
+
+    [API CHANGES]
+
+    * Adjust to Interchange6::Schema changes (Peter Mottram).
+    * Die on cart errors instead of calling set_error method (Peter Mottram).
+
+    [ENHANCEMENTS]
+
+    * Add before/after_cart_product_set_quantity hooks (Peter Mottram).
+    * Add quantity and uri to cart->add arguments in cart_route (Peter Mottram).
+    * Support selling price in cart (Peter Mottram).
+    * Add debug message for the case that navigation template is changed by
+      navigation attribute (Stefan Hornburg).
+
+    [DOCUMENTATION]
+
+    * Extend description of before_navigation_display hook (Stefan Hornburg).
+
+    [TESTS]
+
+    * Use fixtures from Interchange6::Schema (Peter Mottram).
+    * Add tests for putting variants into the cart (Peter Mottram).
+    * Fix for routes due to total number formatting in new cart (Peter Mottram).
+
 0.051 Fri Aug 15 11:34:47 2014 CEST
 
     [ENHANCEMENTS]
