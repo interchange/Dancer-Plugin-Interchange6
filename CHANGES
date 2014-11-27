@@ -1,5 +1,21 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.060 Thu Nov 27 16:59:29 2014 CET
+
+    [API CHANGES]
+
+    * Move hooks from Interchange6 (Peter Mottram).
+
+    [ENHANCEMENTS]
+
+    * Add "update" to cart route (Peter Mottram).
+    * Redirect after cart route remove get requests (Peter Mottram).
+    * Improve cart error handling (Peter Mottram).
+
+    [BUG FIXES]
+
+    * Fix usage of 'scalar' in cart route (GH #40, Jeff Boes, Peter Mottram).
+
 0.060_03 Thu Nov 27 15:15:18 2014 CET
 
     [API CHANGES]
