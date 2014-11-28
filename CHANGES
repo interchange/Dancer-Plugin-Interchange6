@@ -1,5 +1,11 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.061 Fri Nov 28 12:07:35 2014 CET
+
+    [BUG FIXES]
+
+    * Bump up prerequisite on Interchange6 (GH #41, Stefan Hornburg).
+
 0.060 Thu Nov 27 16:59:29 2014 CET
 
     [API CHANGES]

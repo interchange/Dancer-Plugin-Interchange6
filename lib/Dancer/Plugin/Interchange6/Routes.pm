@@ -371,7 +371,10 @@ sub _config_routes {
             # recurse
             _config_routes($settings->{$key}, $defaults->{$key});
         }
-         else {
+        elsif (! exists $defaults->{$key}) {
+            die "Invalid entry in routes configuration: $key.";
+        }
+        else {
             $settings->{$key} = $defaults->{$key};
         }
     }
