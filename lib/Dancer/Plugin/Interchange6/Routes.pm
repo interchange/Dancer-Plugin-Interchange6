@@ -316,11 +316,12 @@ sub _setup_routes {
 
             my $products;
 
-            my $nav_products = $nav->search_related('navigation_products')->search_related(
-                'product',
+            my $nav_products =
+              $nav->search_related('navigation_products')
+              ->product_with_selling_price->search(
                 $search_args->{conditions},
                 $search_args->{attributes},
-            );
+              );
 
             if ($object_autodetect) {
                 $products = $nav_products;
