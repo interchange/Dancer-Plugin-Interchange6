@@ -254,7 +254,7 @@ test 'route tests' => sub {
     lives_ok( sub { $user = shop_user->find({username => 'customer1' }) },
             "grab customer1 fom db" );
 
-    cmp_ok( $user->roles->count, "==", 0, "user has 0 roles" );
+    cmp_ok( $user->roles->count, "==", 1, "user has 1 role" );
 
     %form = ( sku => 'os28005', quantity => 5 );
     lives_ok { $resp = dancer_response( POST => '/cart', { body => {%form} } ) }

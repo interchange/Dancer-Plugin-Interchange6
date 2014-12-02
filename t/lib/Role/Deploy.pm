@@ -38,7 +38,7 @@ test 'deploy tests' => sub {
     cmp_ok( $self->countries->count, '>=', 250, "at least 250 countries" );
     cmp_ok( $self->price_modifiers->count,
         '>=', 15, "at least 15 price_modifiers" );
-    cmp_ok( $self->roles->count, '>=', 7, "at least 7 roles" );
+    cmp_ok( $self->roles->count, '>=', 5, "at least 5 roles" );
     cmp_ok( $self->states->count, '>=', 64, "at least 64 states" );
     cmp_ok( $self->taxes->count, '>=', 37, "at least 37 Tax rates" );
     cmp_ok( $self->users->count, '>=', 5, "at least 5 users" );
