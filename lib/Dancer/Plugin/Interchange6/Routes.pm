@@ -310,6 +310,7 @@ sub _setup_routes {
                     active => 1,
                 },
                 attributes => {
+                    prefetch => 'inventory',
                     rows => $routes_config->{navigation}->{records},
                     page => $page},
             };
