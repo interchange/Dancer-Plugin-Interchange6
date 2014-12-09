@@ -90,15 +90,46 @@ sub cart_route {
                     return redirect '/';
                 }
 
+                # store params in hash
+                my %params = params;
+
+                if ( defined $product->canonical_sku ) {
+
+                    # this is a variant so we need to add in variant info
+                    # into %params if missing
+
+                    my $rset = $product->product_attributes->search(
+                        {
+                            'attribute.type' => 'variant',
+                        },
+                        {
+                            prefetch => [
+                                'attribute',
+                                {
+                                    product_attribute_values =>
+                                      'attribute_value'
+                                }
+                            ],
+                        }
+                    );
+                    while ( my $result = $rset->next ) {
+                        my $name  = $result->attribute->name;
+                        # WTF! why do we get a resultset of pavs? Surely there
+                        # should be only one related pav for pa?
+                        my $value = $result->product_attribute_values->first
+                          ->attribute_value->value;
+                        $params{$name} = $value unless defined $params{$name};
+
+                    }
+                }
                 # retrieve product attributes for possible variants
                 my $attr_ref = $product->attribute_iterator( hashref => 1 );
                 my %user_input;
 
                 if ( keys %$attr_ref ) {
 
-                    # find variant
                     for my $name ( keys %$attr_ref ) {
-                        $user_input{$name} = param($name);
+                        $user_input{$name} = $params{$name};
                     }
 
                     debug "Attributes for $input: ", $attr_ref,
