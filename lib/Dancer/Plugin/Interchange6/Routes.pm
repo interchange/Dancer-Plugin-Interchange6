@@ -282,15 +282,11 @@ sub _setup_routes {
         }
 
         # first check for navigation item
-        my $navigation_result = shop_navigation->search({uri => $path});
+        my $nav = shop_navigation->find({uri => $path});
 
-        if ($navigation_result > 1) {
-            die "Ambigious result on path $path.";
-        }
+        if (defined $nav) {
 
-        if ($navigation_result == 1) {
             # navigation item found
-            my $nav = $navigation_result->next;
 
             # search parameters
             my $search_args = {
