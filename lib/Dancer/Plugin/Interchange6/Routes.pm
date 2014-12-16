@@ -230,19 +230,12 @@ sub _setup_routes {
     # fallback route for flypage and navigation
     get qr{/(?<path>.+)} => sub {
         my $path = captures->{'path'};
-        my $product;
 
         # check for a matching product by uri
-        my $product_result = shop_product->search({uri => $path});
+        my $product = shop_product->find({uri => $path});
 
-        if ($product_result > 1) {
-            die "Ambigious result on path $path.";
-        }
+        if (!defined $product) {
 
-        if ($product_result == 1) {
-            $product = $product_result->next;
-        }
-        else {
             # check for a matching product by sku
             $product = shop_product($path);
 
@@ -254,10 +247,6 @@ sub _setup_routes {
                         " for $path.";
                     return redirect(uri_for($product->uri), 301);
                 }
-            }
-            else {
-                # no matching product found
-                undef $product;
             }
         }
 
