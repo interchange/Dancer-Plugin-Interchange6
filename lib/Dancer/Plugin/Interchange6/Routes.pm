@@ -288,50 +288,47 @@ sub _setup_routes {
 
             # navigation item found
 
-            # search parameters
-            my $search_args = {
-                conditions => {
-                    # only active items
-                    active => 1,
-                },
-                attributes => {
-                    prefetch => 'inventory',
-                    rows => $routes_config->{navigation}->{records},
-                    page => $page},
-            };
+            # we need to find all our active products before we call
+            # listing method on the resultset and we'll later need
+            # the pager for this resultset
+            # TODO: updates needed here to allow for different number of rows
 
-            my $products;
+            my $products =
+              $nav->navigation_products->search_related('product')
+              ->active->limited_page( $page,
+                $routes_config->{navigation}->{records} );
 
-            my $nav_products =
-              $nav->search_related('navigation_products')
-              ->product_with_selling_price->search(
-                $search_args->{conditions},
-                $search_args->{attributes},
-              );
+            # now get the HRI product listing
+            # alias 'me' refers to navigation_products
+            # NOTE: group_by must always contain product.sku and
+            # inventory.quantity plus all order_by columns
+            # TODO: updates needed here to allow for different search
 
-            if ($object_autodetect) {
-                $products = $nav_products;
-            }
-            else {
-                while (my $rec = $nav_products->next) {
-                    push @$products, $rec;
-                    next if @$products > 200;
-                }
+            my $product_listing =
+              $products->listing( { users_id => session('logged_in_user_id') } )
+              ->group_by(
+                [
+                    'product.sku', 'inventory.quantity',
+                    'me.priority', 'product.priority'
+                ]
+              )->order_by('!me.priority,!product.priority');
+
+            if (!$object_autodetect) {
+                $product_listing = [$product_listing->all];
             }
 
             # retrieve navigation attribute for template
-	    my $template = $routes_config->{navigation}->{template};
+            my $template = $routes_config->{navigation}->{template};
 
-	    if (my $attr_value = $nav->find_attribute_value('template')) {
-            debug "Change template name from $template to $attr_value due to navigation attribute.";
-            $template = $attr_value;
-	    }
+            if ( my $attr_value = $nav->find_attribute_value('template') ) {
+                debug "Change template name from $template to $attr_value due to navigation attribute.";
+                $template = $attr_value;
+            }
 
             my $tokens = {navigation => $nav,
-			  template => $template,
-                          products => $products,
-                          count => $nav_products->count,
-                          pager => $nav_products->pager,
+                          template => $template,
+                          products => $product_listing,
+                          pager => $products->pager,
                          };
 
             execute_hook('before_navigation_display', $tokens);

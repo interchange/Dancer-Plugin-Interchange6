@@ -67,7 +67,7 @@ hook before_navigation_display => sub {
 
     $tokens->{name} = $tokens->{navigation}->name;
     $tokens->{products} =
-      join( ",", sort map { $_->name } @{ $tokens->{products} } );
+      join( ",", sort map { $_->{name} } @{ $tokens->{products} } );
 };
 
 hook before_template_display => sub {
