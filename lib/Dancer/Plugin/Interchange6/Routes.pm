@@ -112,15 +112,15 @@ Navigation object.
 
 =item products
 
-Products for this navigation item.
-
-=item count
-
-Number of products.
+Product listing for this navigation item. The product listing is generated
+using L<Interchange6::Schema::Result::Product/listing>.
 
 =item pager
 
-Page for products.
+L<Data::Page> object for L</products>.
+
+To get the full count of products call C<total_entries> on the Data::Page
+object.
 
 =item template
 
@@ -292,6 +292,7 @@ sub _setup_routes {
             # listing method on the resultset and we'll later need
             # the pager for this resultset
             # TODO: updates needed here to allow for different number of rows
+            # TODO: also handle requested page being beyond available pages
 
             my $products =
               $nav->navigation_products->search_related('product')
