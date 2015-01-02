@@ -100,6 +100,33 @@ is the value of the C<product> key.
 
 =item before_checkout_display
 
+=item before_navigation_search
+
+This hook is called if a navigation uri is requested and before product search
+queries are generated.
+
+The hook sub receives the navigation data as hash reference:
+
+=over 4
+
+=item navigation
+
+Navigation object.
+
+=item page
+
+Page number found at end of URI or 1 if no page number found.
+
+=item template
+
+Name of template.
+
+=back
+
+The navigation hash reference can be modified inside the hook and all changes
+will be visible to the navigation route (and also the template) after the hook
+returns.
+
 =item before_navigation_display
 
 The hook sub receives the navigation data as hash reference:
@@ -158,7 +185,8 @@ register shop_setup_routes => sub {
     _setup_routes();
 };
 
-register_hook (qw/before_product_display before_navigation_display/);
+register_hook (qw/before_product_display before_navigation_search
+    before_navigation_display/);
 register_plugin;
 
 our $object_autodetect = 0;
@@ -288,22 +316,36 @@ sub _setup_routes {
 
             # navigation item found
 
+            # retrieve navigation attribute for template
+            my $template = $routes_config->{navigation}->{template};
+
+            if ( my $attr_value = $nav->find_attribute_value('template') ) {
+                debug "Change template name from $template to $attr_value due to navigation attribute.";
+                $template = $attr_value;
+            }
+
+            my $tokens = {
+                navigation => $nav,
+                page       => $page,
+                template   => $template
+            };
+
+            execute_hook('before_navigation_search', $tokens);
+
             # we need to find all our active products before we call
             # listing method on the resultset and we'll later need
             # the pager for this resultset
-            # TODO: updates needed here to allow for different number of rows
-            # TODO: also handle requested page being beyond available pages
 
             my $products =
-              $nav->navigation_products->search_related('product')
-              ->active->limited_page( $page,
+              $tokens->{navigation}
+              ->navigation_products->search_related('product')
+              ->active->limited_page( $tokens->{page},
                 $routes_config->{navigation}->{records} );
 
             # now get the HRI product listing
             # alias 'me' refers to navigation_products
             # NOTE: group_by must always contain product.sku and
             # inventory.quantity plus all order_by columns
-            # TODO: updates needed here to allow for different search
 
             my $product_listing =
               $products->listing( { users_id => session('logged_in_user_id') } )
@@ -318,19 +360,8 @@ sub _setup_routes {
                 $product_listing = [$product_listing->all];
             }
 
-            # retrieve navigation attribute for template
-            my $template = $routes_config->{navigation}->{template};
-
-            if ( my $attr_value = $nav->find_attribute_value('template') ) {
-                debug "Change template name from $template to $attr_value due to navigation attribute.";
-                $template = $attr_value;
-            }
-
-            my $tokens = {navigation => $nav,
-                          template => $template,
-                          products => $product_listing,
-                          pager => $products->pager,
-                         };
+            $tokens->{products} = $product_listing;
+            $tokens->{pager}    = $products->pager;
 
             execute_hook('before_navigation_display', $tokens);
 
