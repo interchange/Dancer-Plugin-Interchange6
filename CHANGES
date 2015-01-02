@@ -1,5 +1,21 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.070 Fri Jan  2 09:52:14 2015 CET
+
+    [ENHANCEMENTS]
+
+    * Add before_navigation_search hook to navigation route
+      (Peter Mottram, GH #47).
+    * Adjust navigation route to new Product resultset listing method
+      (Peter Mottram).
+    * Simplify navigation and product route since uri is unique column
+      (Peter Mottram).
+    * Add product variant to cart without attributes/values (Peter Mottram).
+
+    [DOCUMENTATION]
+
+    * Adjust POD for before_navigation_display_hook (Peter Mottram).
+
 0.061 Fri Nov 28 12:07:35 2014 CET
 
     [BUG FIXES]
