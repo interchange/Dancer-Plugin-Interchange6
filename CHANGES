@@ -1,5 +1,11 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.071 Sat Jan  3 11:13:55 2015 CET
+
+    [BUG FIXES]
+
+    * Fix prerequisite on Interchange6::Schema (Stefan Hornburg).
+
 0.070 Fri Jan  2 09:52:14 2015 CET
 
     [ENHANCEMENTS]
