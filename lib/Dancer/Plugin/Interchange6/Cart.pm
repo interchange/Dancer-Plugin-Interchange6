@@ -137,7 +137,6 @@ sub BUILD {
 
     if (logged_in_user) {
         $roles = user_roles;
-        push @$roles, 'authenticated';
     }
 
     while ( my $record = $rset->next ) {
@@ -256,7 +255,7 @@ around 'add' => sub {
 
         my $query = { quantity => $ret->quantity };
         if ( logged_in_user ) {
-            $query->{roles} = [ user_roles, 'authenticated' ];
+            $query->{roles} = [ user_roles ];
         }
         $ret->selling_price( $cart_product->product->selling_price($query) );
 
