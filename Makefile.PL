@@ -24,7 +24,7 @@ WriteMakefile(
                   'Interchange6::Schema'     => '0.070',
                   'Interchange6' => '0.061',
                   'Dancer'     => 1.3098,
-                  'Dancer::Session::DBIC' => 0,
+                  'Dancer::Session::DBIC' => '0.004',
                   'Dancer::Plugin::DBIC' => 0,
                   'Dancer::Plugin::Auth::Extensible' => 0,
                   'Dancer::Plugin::Auth::Extensible::Provider::DBIC' => 0,
