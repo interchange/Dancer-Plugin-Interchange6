@@ -332,36 +332,30 @@ sub _setup_routes {
 
             execute_hook('before_navigation_search', $tokens);
 
-            # we need to find all our active products before we call
-            # listing method on the resultset and we'll later need
-            # the pager for this resultset
+            # Find product listing for this nav for active products only.
+            # In order_by me refers to navigation_products.
 
             my $products =
               $tokens->{navigation}
-              ->navigation_products->search_related('product')
-              ->active->limited_page( $tokens->{page},
-                $routes_config->{navigation}->{records} );
+              ->navigation_products
+              ->search_related('product')
+              ->active
+              ->listing( { users_id => session('logged_in_user_id') } )
+              ->order_by('!me.priority,!product.priority')
+              ->rows( $routes_config->{navigation}->{records} )
+              ->page( $tokens->{page} );
 
-            # now get the HRI product listing
-            # alias 'me' refers to navigation_products
-            # NOTE: group_by must always contain product.sku and
-            # inventory.quantity plus all order_by columns
+            # get a pager
 
-            my $product_listing =
-              $products->listing( { users_id => session('logged_in_user_id') } )
-              ->group_by(
-                [
-                    'product.sku', 'inventory.quantity',
-                    'me.priority', 'product.priority'
-                ]
-              )->order_by('!me.priority,!product.priority');
+            $tokens->{pager} = $products->pager;
+
+            # can template autodetect objects?
 
             if (!$object_autodetect) {
-                $product_listing = [$product_listing->all];
+                $products = [$products->all];
             }
 
-            $tokens->{products} = $product_listing;
-            $tokens->{pager}    = $products->pager;
+            $tokens->{products} = $products;
 
             execute_hook('before_navigation_display', $tokens);
 

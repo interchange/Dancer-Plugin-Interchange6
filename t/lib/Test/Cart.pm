@@ -83,6 +83,17 @@ test 'cart tests' => sub {
     throws_ok { $cart->add('this sku does not exist') }
     qr/Product with sku .+ does not exist/, "add sku that does not exist in db";
 
+    # variant
+    lives_ok { $ret = $cart->add('os28085-6') } "add variant os28085-6";
+    isa_ok( $ret->[0], 'Interchange6::Cart::Product' );
+    cmp_ok( $ret->[0]->sku, 'eq', 'os28085-6', "Check sku" );
+    cmp_ok( $ret->[0]->canonical_sku, 'eq', 'os28085', "Check canonical_sku" );
+    ok( $ret->[0]->is_variant, "product is a variant" );
+    ok( !$ret->[0]->is_canonical, "product is not canonical" );
+    lives_ok( sub { $cart->clear }, "clear the cart" );
+    cmp_ok( $cart->count, '==', 0,
+        "Check number of products in the cart is 0" );
+
     # add os28005 as scalar
     lives_ok { $ret = $cart->add('os28005') } "add single scalar sku";
     isa_ok( $ret->[0], 'Interchange6::Cart::Product' );
@@ -95,6 +106,8 @@ test 'cart tests' => sub {
         '==', 8.99, "Check price of returned product" );
     cmp_ok( $ret->[0]->quantity, '==', 1,
         "Check quantity of returned product is 1" );
+    ok( $ret->[0]->is_canonical, "product is canonical" );
+    ok( !$ret->[0]->is_variant, "product is not a variant" );
     cmp_ok( $cart->count, '==', 1,
         "Check number of products in the cart is 1" );
     cmp_ok( sprintf( "%.2f", $cart->subtotal ),

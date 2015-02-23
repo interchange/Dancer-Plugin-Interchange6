@@ -145,6 +145,7 @@ sub BUILD {
           {
             id            => $record->cart_products_id,
             sku           => $record->sku,
+            canonical_sku => $record->product->canonical_sku,
             name          => $record->product->name,
             quantity      => $record->quantity,
             price         => $record->product->price,
@@ -209,10 +210,11 @@ around 'add' => sub {
           unless defined $result;
 
         my $product = {
-            name     => $result->name,
-            price    => $result->price,
-            sku      => $result->sku,
-            uri      => $result->uri,
+            name          => $result->name,
+            price         => $result->price,
+            sku           => $result->sku,
+            canonical_sku => $result->canonical_sku,
+            uri           => $result->uri,
         };
         $product->{quantity} = $arg->{quantity}
           if defined( $arg->{quantity} );
