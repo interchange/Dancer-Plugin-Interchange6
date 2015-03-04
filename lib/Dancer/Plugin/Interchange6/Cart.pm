@@ -150,6 +150,7 @@ sub BUILD {
             quantity      => $record->quantity,
             price         => $record->product->price,
             uri           => $record->product->uri,
+            weight        => $record->product->weight,
             selling_price => $record->product->selling_price(
                 { quantity => $record->quantity, roles => $roles }
             ),
@@ -215,6 +216,7 @@ around 'add' => sub {
             sku           => $result->sku,
             canonical_sku => $result->canonical_sku,
             uri           => $result->uri,
+            weight        => $result->weight,
         };
         $product->{quantity} = $arg->{quantity}
           if defined( $arg->{quantity} );
