@@ -11,6 +11,8 @@ use Dancer::Plugin::Auth::Extensible;
 use Dancer::Plugin::Interchange6::Cart;
 use Dancer::Plugin::Interchange6::Business::OnlinePayment;
 
+my $cart; #singleton
+
 =head1 NAME
 
 Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
@@ -33,6 +35,15 @@ the C<use> statements:
 
    set session => 'DBIC';
    set session_options => {schema => schema};
+
+=head1 CONFIGURATION
+
+The plugin caches carts by default in a L<Dancer/var> named 'ic6_carts'. The
+name of this var can be configured thus:
+
+  plugins:
+    Interchange6:
+      carts_var_name: some_other_var
 
 =head1 ROUTES
 
@@ -342,24 +353,41 @@ register cart => \&_shop_cart;
 register shop_cart => \&_shop_cart;
 
 sub _shop_cart {
-    my (%args, $user_ref);
 
-    %args = (
-        sessions_id => session->id,
-        execute_hook => sub {execute_hook(@_)},
-    );
+    my ( %args, $user_ref );
 
-    # we have a cart name
-    $args{name} = $_[0] if @_ == 1;
+    # cart name from arg or default 'main'
+    $args{name} = @_ == 1 ? $_[0] : 'main';
 
-    if ($user_ref = logged_in_user) {
+    # set name of var we will stash carts in
+	my $var = plugin_setting->{carts_var_name} || 'ic6_carts';
 
-        # user is logged in
-        $args{users_id} = $user_ref->users_id;
+    debug "carts_var_name: $var";
+
+    my $carts = var $var // {};
+
+    if ( !defined $carts->{ $args{name} } ) {
+
+        # can't find this cart in stash
+
+        $args{sessions_id} = session->id;
+        $args{execute_hook} = sub { execute_hook(@_) };
+
+        if ( $user_ref = logged_in_user ) {
+
+            # user is logged in
+            $args{users_id} = $user_ref->users_id;
+        }
+
+        $carts->{ $args{name} } =
+          Dancer::Plugin::Interchange6::Cart->new(%args);
     }
 
-    return Dancer::Plugin::Interchange6::Cart->new( %args );
-};
+    # stash carts back in var
+    var $var => $carts;
+
+    return $carts->{ $args{name} };
+}
 
 sub _shop_schema {
     my $schema_key;

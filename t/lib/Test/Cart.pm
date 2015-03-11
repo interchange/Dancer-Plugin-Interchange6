@@ -315,15 +315,24 @@ test 'cart tests' => sub {
 
     # Seed
 
+    lives_ok( sub { var ic6_carts => undef },
+        "undef var ic6_carts so new cart will not come from cache" );
+
     lives_ok { $cart = cart } "Create a new cart";
     cmp_ok( $cart->id, '==', 3, "cart id is 3" );
 
-    $log = pop @{&read_logs};
+    $log = &read_logs;
     cmp_deeply(
         $log,
-        { level => "debug", message => "New cart 3 main." },
+        [
+            { level => "debug", message => "carts_var_name: ic6_carts" },
+            { level => "debug", message => "New cart 3 main." },
+        ],
         "Check cart BUILDARGS debug message"
     ) or diag Dumper($log);
+
+    lives_ok { $cart = cart } "calling cart again should return same cart";
+    cmp_ok( $cart->id, '==', 3, "cart id is 3" );
 
     $ret = $schema->resultset('Cart')->search( {}, { order_by => 'carts_id' } );
     cmp_ok( $ret->count, '==', 3, "3 carts in the database" );
@@ -369,6 +378,23 @@ test 'cart tests' => sub {
 
     cmp_ok( $schema->resultset('Cart')->count, '==', 0, "0 Cart rows" );
 
+    # plugin setting carts_var_name
+    
+    setting('plugins')->{Interchange6}->{carts_var_name} = "foobar";
+
+    &read_logs;
+
+    lives_ok { $cart = cart } "Create a new cart";
+
+    $log = &read_logs;
+    cmp_deeply(
+        $log,
+        [
+            { level => "debug", message => "carts_var_name: foobar" },
+            { level => "debug", message => re('New cart \d+ main') },
+        ],
+        "Check cart BUILDARGS debug message"
+    ) or diag Dumper($log);
 };
 
 1;
