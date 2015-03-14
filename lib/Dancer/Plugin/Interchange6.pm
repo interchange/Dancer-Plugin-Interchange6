@@ -11,7 +11,7 @@ use Dancer::Plugin::Auth::Extensible;
 use Dancer::Plugin::Interchange6::Cart;
 use Dancer::Plugin::Interchange6::Business::OnlinePayment;
 
-my $cart; #singleton
+use Class::Load ':all';
 
 =head1 NAME
 
@@ -89,6 +89,13 @@ and further information.
 =head2 shop_cart
 
 Returns L<Dancer::Plugin::Interchange6::Cart> object.
+
+If you wish to subclass the cart you can have shop_cart return your subclassed
+cart instead. You set the cart class via the following example config snippet:
+
+  plugins:
+    Interchange6:
+      carts_var_name: MyApp::Cart
 
 =head2 shop_charge
 
@@ -361,8 +368,12 @@ sub _shop_cart {
 
     # set name of var we will stash carts in
 	my $var = plugin_setting->{carts_var_name} || 'ic6_carts';
-
     debug "carts_var_name: $var";
+
+    # cart class
+    my $cart_class = plugin_setting->{cart_class}
+      || 'Dancer::Plugin::Interchange6::Cart';
+    load_class $cart_class;
 
     my $carts = var $var // {};
 
@@ -379,8 +390,7 @@ sub _shop_cart {
             $args{users_id} = $user_ref->users_id;
         }
 
-        $carts->{ $args{name} } =
-          Dancer::Plugin::Interchange6::Cart->new(%args);
+        $carts->{ $args{name} } = $cart_class->new(%args);
     }
 
     # stash carts back in var

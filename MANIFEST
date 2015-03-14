@@ -23,6 +23,7 @@ t/lib/Role/views/login
 t/lib/Role/views/logout
 t/lib/Role/views/product
 t/lib/TestApp.pm
+t/lib/TestCart.pm
 t/lib/Test/Cart.pm
 t/lib/Test/Routes.pm
 t/lib/Test/Shop.pm

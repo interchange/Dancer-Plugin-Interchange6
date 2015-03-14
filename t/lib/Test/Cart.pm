@@ -395,6 +395,26 @@ test 'cart tests' => sub {
         ],
         "Check cart BUILDARGS debug message"
     ) or diag Dumper($log);
+
+    # subclassed cart
+
+    setting('plugins')->{Interchange6}->{carts_var_name} = "ic6_carts";
+    setting('plugins')->{Interchange6}->{cart_class} = "TestCart";
+
+    lives_ok( sub { var ic6_carts => undef },
+        "undef var ic6_carts so new cart will not come from cache" );
+
+    lives_ok( sub { $cart = cart("test") }, "get new TestCart with name test" );
+
+    isa_ok( $cart, 'TestCart' );
+    isa_ok( $cart, 'Interchange6::Cart' );
+    ok( $cart->can('add'), "has add method" );
+    ok( $cart->can('test_method'), "has test_method" );
+    cmp_ok( $cart->name, 'eq', 'test', "name is test" );
+    ok( ! defined $cart->test_attribute, "test_attribute is undef" );
+    lives_ok( sub { $cart->test_attribute("foobar") }, "set test_attribute" );
+    cmp_ok( $cart->test_attribute, 'eq', 'foobar', "has test_attribute" );
+
 };
 
 1;
