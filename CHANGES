@@ -1,5 +1,29 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.072
+
+    [FEATURES]
+
+    * Cart class now configurable to allow subclassing (Peter Mottram)
+
+    [ENHANCEMENTS]
+
+    * Add product canonical_sku to Cart BUILD and add (Peter Mottram)
+    * Add product weight to Cart BUILD and add (Peter Mottram)
+    * stash carts in a var to avoid reloading from DB during request
+      (Peter Mottram)
+
+    [TESTS]
+
+    * use Travis containerised build instead of VM (Peter Mottram)
+
+    [BUG FIXES]
+
+    * Bump up prerequisite on Dancer::Session::DBIC for UTF-8 bug fix
+      (Stefan Hornburg)
+    * Remove use of 'authenticated' role from Cart as it is no longer used
+      (Peter Mottram)
+
 0.071 Sat Jan  3 11:13:55 2015 CET
 
     [BUG FIXES]
