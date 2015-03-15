@@ -38,12 +38,27 @@ the C<use> statements:
 
 =head1 CONFIGURATION
 
-The plugin caches carts by default in a L<Dancer/var> named 'ic6_carts'. The
-name of this var can be configured thus:
+Available configuration options:
 
   plugins:
     Interchange6:
+      cart_class: MyApp::Cart
       carts_var_name: some_other_var
+
+=over
+
+=item * cart_class
+
+If you wish to subclass the cart you can have L</shop_cart> return your
+subclassed cart instead. You set the cart class via C<cart_class>.
+Defaults to L<Dancer::Plugin::Interchange6::Cart>.
+
+=item * carts_var_name
+
+The plugin caches carts in a L<Dancer/var> and the name of the var used can
+be set via C<carts_var_name>. Defaults to C<ic6_carts>.
+
+=back
 
 =head1 ROUTES
 
@@ -90,12 +105,6 @@ and further information.
 
 Returns L<Dancer::Plugin::Interchange6::Cart> object.
 
-If you wish to subclass the cart you can have shop_cart return your subclassed
-cart instead. You set the cart class via the following example config snippet:
-
-  plugins:
-    Interchange6:
-      carts_var_name: MyApp::Cart
 
 =head2 shop_charge
 
