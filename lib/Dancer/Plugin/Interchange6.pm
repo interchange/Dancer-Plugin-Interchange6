@@ -344,8 +344,6 @@ register shop_charge => sub {
     $bop_object->payment_order($payment_order);
 
     # call charge method
-    debug "Charging with the following parameters: ", \%args;
-
     $bop_object->charge(%args);
 
     if ($bop_object->is_success) {
