@@ -30,6 +30,10 @@ WriteMakefile(
                   'Dancer::Plugin::Auth::Extensible::Provider::DBIC' => 0,
                   'Business::OnlinePayment' => 3.02,
                   'Class::Load' => 0,
+                  # Net::HTTPS::Any is required by Business::OnlinePayment but
+                  # versions before 0.11 have a habit of failing to install
+                  # so add this dep to make installing DPIC6 more reliable
+                  'Net::HTTPS::Any' => '0.11', # 
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Dancer-Plugin-Interchange6-*' },
