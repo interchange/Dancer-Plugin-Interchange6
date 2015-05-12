@@ -261,7 +261,7 @@ around 'add' => sub {
         if ( logged_in_user ) {
             $query->{roles} = [ user_roles ];
         }
-        $ret->selling_price( $cart_product->product->selling_price($query) );
+        $ret->set_selling_price( $cart_product->product->selling_price($query) );
 
         push @ret, $ret;
     }
