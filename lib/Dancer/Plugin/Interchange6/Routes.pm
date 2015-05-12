@@ -341,9 +341,17 @@ sub _setup_routes {
               ->search_related('product')
               ->active
               ->listing( { users_id => session('logged_in_user_id') } )
-              ->order_by('!me.priority,!product.priority')
-              ->rows( $routes_config->{navigation}->{records} )
-              ->page( $tokens->{page} );
+              ->order_by('!me.priority,!product.priority');
+
+            if ( defined $routes_config->{navigation}->{records} ) {
+
+                # records per page is set in configuration so page the
+                # result set
+
+                $products =
+                  $products->rows( $routes_config->{navigation}->{records} )
+                  ->page( $tokens->{page} );
+            }
 
             # get a pager
 
