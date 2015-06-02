@@ -1,7 +1,4 @@
 package # Hide from PAUSE
-  DBIx::Class::Version::Table;
-
-package # Hide from PAUSE
   Dancer::Plugin::Interchange6::Cart::DBIC;
 
 =head1 DESCRIPTION
