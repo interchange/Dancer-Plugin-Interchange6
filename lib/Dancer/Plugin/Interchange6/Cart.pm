@@ -131,9 +131,14 @@ sub BUILD {
             sessions_id => $self->sessions_id,
         },
         { key => 'carts_name_sessions_id' }
-      )
-      ->search_related( 'cart_products', {},
-        { join => 'product', prefetch => 'product', } );
+      )->search_related(
+        'cart_products',
+        undef,
+        {
+            prefetch => 'product',
+            order_by => [ 'cart_position', 'cart_products_id' ]
+        }
+      );
 
     if (logged_in_user) {
         $roles = user_roles;
