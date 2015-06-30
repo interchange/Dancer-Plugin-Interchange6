@@ -370,6 +370,16 @@ sub _setup_routes {
             return template $tokens->{template}, $tokens;
         }
 
+        # check for uri redirect record
+        my $redirect = shop_uri_redirect($path);
+
+        if ($redirect) {
+            # permanent redirect to specific URL
+            debug "UriRedirect record found redirecting uri ", $redirect->uri_target,
+                " for $path, with status code ", $redirect->status_code;
+            return redirect(uri_for($redirect->uri_target), $redirect->status_code);
+        }
+
         # display not_found page
         status 'not_found';
         forward 404;

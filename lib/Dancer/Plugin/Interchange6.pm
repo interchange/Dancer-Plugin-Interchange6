@@ -300,6 +300,10 @@ register shop_state => sub {
     _shop_resultset('State', @_);
 };
 
+register shop_uri_redirect => sub {
+    _shop_resultset('UriRedirect', @_);
+};
+
 register shop_user => sub {
     _shop_resultset('User', @_);
 };
