@@ -375,7 +375,7 @@ sub _setup_routes {
         }
         else {
             my $tokens->{path} = $path;
-            execute_hook('before_navigation_404', $path);
+            execute_hook('before_navigation_404', $tokens);
 
             # display not_found page
             status 'not_found';
