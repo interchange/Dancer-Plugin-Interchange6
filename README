@@ -2,7 +2,7 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.080
+    Version 0.086
 
 REQUIREMENTS
     All Interchange6 Dancer applications need to use the
@@ -15,12 +15,21 @@ REQUIREMENTS
        set session_options => {schema => schema};
 
 CONFIGURATION
-    The plugin caches carts by default in a Dancer named 'ic6_carts'. The
-    name of this var can be configured thus:
+    Available configuration options:
 
       plugins:
         Interchange6:
+          cart_class: MyApp::Cart
           carts_var_name: some_other_var
+
+    * cart_class
+        If you wish to subclass the cart you can have shop_cart return your
+        subclassed cart instead. You set the cart class via `cart_class'.
+        Defaults to Dancer::Plugin::Interchange6::Cart.
+
+    * carts_var_name
+        The plugin caches carts in a Dancer and the name of the var used can
+        be set via `carts_var_name'. Defaults to `ic6_carts'.
 
 ROUTES
     You can use the Dancer::Plugin::Interchange6::Routes plugin bundled with
@@ -56,14 +65,6 @@ ROUTES
 KEYWORDS
   shop_cart
     Returns Dancer::Plugin::Interchange6::Cart object.
-
-    If you wish to subclass the cart you can have shop_cart return your
-    subclassed cart instead. You set the cart class via the following
-    example config snippet:
-
-      plugins:
-        Interchange6:
-          carts_var_name: MyApp::Cart
 
   shop_charge
     Creates payment order and authorizes amount.

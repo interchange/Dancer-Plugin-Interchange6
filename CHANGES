@@ -1,5 +1,24 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.086 Wed Jul  1 17:17:19 2015 CEST
+
+    [ENHANCEMENTS]
+
+    * Order cart products on cart load from database (Peter Mottram).
+    * Add prerequisite on Net::HTTPS 0.11 to avoid weird installation
+      failure (Peter Mottram, GH #1).
+    * Apply per-page navigation.records config limit only if defined
+      (Peter Mottram, GH #46).
+
+    [BUG FIXES]
+
+    * Remove possible debug data leak (Peter Mottram).
+
+    [DOCUMENTATION]
+
+    * Improve documentation for cart_class and carts_var_name config options
+      (Peter Mottram).
+
 0.080 Sun Mar 15 09:49:06 2015 CET
 
     [FEATURES]
