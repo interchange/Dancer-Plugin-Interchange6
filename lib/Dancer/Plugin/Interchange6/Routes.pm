@@ -164,6 +164,10 @@ the value in the hashref.
 
 =back
 
+=item before_navigation_404
+
+=back
+
 =item before_login_display
 
 =back
@@ -186,7 +190,7 @@ register shop_setup_routes => sub {
 };
 
 register_hook (qw/before_product_display before_navigation_search
-    before_navigation_display/);
+    before_navigation_display before_navigation_404/);
 register_plugin;
 
 our $object_autodetect = 0;
@@ -369,10 +373,14 @@ sub _setup_routes {
 
             return template $tokens->{template}, $tokens;
         }
+        else {
+            my $tokens->{path} = $path;
+            execute_hook('before_navigation_404', $path);
 
-        # display not_found page
-        status 'not_found';
-        forward 404;
+            # display not_found page
+            status 'not_found';
+            forward 404;
+        }
     };
 }
 
