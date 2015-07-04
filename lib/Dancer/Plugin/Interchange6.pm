@@ -110,6 +110,10 @@ Returns L<Dancer::Plugin::Interchange6::Cart> object.
 
 Creates payment order and authorizes amount.
 
+=head2 shop_redirect
+
+Calls L<Interchange6::Schema::ResultSet::UriRedirect/redirect> with given args.
+
 =head2 shop_schema
 
 Returns L<Interchange6::Schema> object.
@@ -300,8 +304,8 @@ register shop_state => sub {
     _shop_resultset('State', @_);
 };
 
-register shop_uri_redirect => sub {
-    _shop_resultset('UriRedirect', @_);
+register shop_redirect => sub {
+    return resultset('UriRedirect')->redirect($_[0]);
 };
 
 register shop_user => sub {

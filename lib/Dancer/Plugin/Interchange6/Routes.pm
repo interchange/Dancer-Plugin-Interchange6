@@ -371,13 +371,13 @@ sub _setup_routes {
         }
 
         # check for uri redirect record
-        my $redirect = shop_uri_redirect($path);
+        my ( $redirect, $status_code ) = shop_redirect($path);
 
         if ($redirect) {
-            # permanent redirect to specific URL
-            debug "UriRedirect record found redirecting uri ", $redirect->uri_target,
-                " for $path, with status code ", $redirect->status_code;
-            return redirect(uri_for($redirect->uri_target), $redirect->status_code);
+            # redirect to specific URL
+            debug "UriRedirect record found redirecting uri $redirect"
+              . " to $path with status code $status_code";
+            return redirect( uri_for($redirect), $status_code );
         }
 
         # display not_found page

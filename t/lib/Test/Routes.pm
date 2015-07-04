@@ -340,6 +340,37 @@ test 'route tests' => sub {
     response_content_like $resp => qr/cart_total="0/, 'cart_total is 0';
     response_content_like $resp => qr/cart=""/,       'cart is empty';
 
+    # shop_redirect
+    lives_ok(sub{ $resp = dancer_response GET => '/old-hand-tools' }, "GET /old-hand-tools" );
+    response_status_is $resp => 404, 'status is not_found';
+
+    $schema->resultset("UriRedirect")->delete;
+
+    scalar $schema->resultset("UriRedirect")->populate(
+        [
+            [qw/uri_source      uri_target  status_code/],
+            [qw/old-hand-tools  hand-tools  301/],
+            [qw/one             two         301/],
+            [qw/two             hand-tools  302/],
+            [qw/bad1            bad2        301/],
+            [qw/bad2            bad3        301/],
+            [qw/bad3            bad1        302/],
+        ]
+    );
+
+    cmp_ok( $schema->resultset('UriRedirect')->count,
+        '==', 6, "6 UriRedirect rows" );
+
+    lives_ok(sub{ $resp = dancer_response GET => '/old-hand-tools' }, "GET /old-hand-tools" );
+    response_status_is $resp => 301, 'status is 301';
+    response_redirect_location_is $resp => 'http://localhost/hand-tools', 'redirect is ok';
+
+    lives_ok(sub{ $resp = dancer_response GET => '/one' }, "GET /one" );
+    response_status_is $resp => 302, 'status is 302';
+    response_redirect_location_is $resp => 'http://localhost/hand-tools', 'redirect is ok';
+
+    lives_ok(sub{ $resp = dancer_response GET => '/bad1' }, "circular redirect" );
+    response_status_is $resp => 500, 'status is 500';
 };
 
 1;
