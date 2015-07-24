@@ -370,7 +370,7 @@ test 'route tests' => sub {
     response_redirect_location_is $resp => 'http://localhost/hand-tools', 'redirect is ok';
 
     lives_ok(sub{ $resp = dancer_response GET => '/bad1' }, "circular redirect" );
-    response_status_is $resp => 500, 'status is 500';
+    response_status_is $resp => 404, 'status is 404';
 };
 
 1;
