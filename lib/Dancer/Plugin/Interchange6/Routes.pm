@@ -304,7 +304,7 @@ sub _setup_routes {
                 execute_hook('before_product_display', $tokens);
 
                 my $output = template $routes_config->{product}->{template},
-                    { layout => $tokens, $routes_config->{product}->{layout} };
+                    $tokens, { layout => $routes_config->{product}->{layout} };
 
                 # temporary way to erase cart errors from missing variants
                 session shop_cart_error => undef;
