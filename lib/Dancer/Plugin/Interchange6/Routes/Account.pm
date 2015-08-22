@@ -55,7 +55,8 @@ sub account_routes {
         # record return_url in the session to reuse it in post route
         session return_url => $values{return_url};
 
-        template $routes_config->{account}->{login}->{template}, \%values;
+        template $routes_config->{account}->{login}->{template}, \%values,
+            { layout => $routes_config->{account}->{login}->{layout} };
     };
 
     $routes{login}->{post} = sub {

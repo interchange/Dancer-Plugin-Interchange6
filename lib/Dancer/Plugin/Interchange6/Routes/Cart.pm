@@ -182,7 +182,8 @@ sub cart_route {
         # can be injected
         execute_hook('before_cart_display', \%values);
 
-        template $routes_config->{cart}->{template}, \%values;
+        template $routes_config->{cart}->{template}, \%values,
+            { layout => $routes_config->{cart}->{layout} };
     }
 }
 
