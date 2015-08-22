@@ -39,7 +39,8 @@ sub checkout_route {
         # call before_checkout_display route so template tokens
         # can be injected
         execute_hook('before_checkout_display', \%values);
-        template $routes_config->{checkout}->{template}, \%values;
+        template $routes_config->{checkout}->{template}, \%values,
+            { layout => $routes_config->{layout} };
     }
 }
 

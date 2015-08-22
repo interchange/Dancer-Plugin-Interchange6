@@ -56,31 +56,37 @@ Route for displaying products.
 
 =head2 CONFIGURATION
 
-The template for each route type can be configured:
+The template and layout for each route type can be configured:
 
     plugins:
       Interchange6::Routes:
         account:
           login:
             template: login
+            layout: no_sidebar
             uri: login
             success_uri:
           logout:
+            layout: no_sidebar
             template: logout
             uri: logout
         cart:
           template: cart
+          layout: no_sidebar
           uri: cart
           active: 1
         checkout:
           template: checkout
+          layout: no_sidebar
           uri: checkout
           active: 0
         navigation:
           template: listing
+          layout: no_sidebar
           records: 0
         product:
           template: product
+          layout: no_sidebar
 
 This sample configuration shows the current defaults.
 
@@ -121,6 +127,10 @@ Page number found at end of URI or 1 if no page number found.
 
 Name of template.
 
+=item layout
+
+Name of layout.
+
 =back
 
 The navigation hash reference can be modified inside the hook and all changes
@@ -149,9 +159,9 @@ L<Data::Page> object for L</products>.
 To get the full count of products call C<total_entries> on the Data::Page
 object.
 
-=item template
+=item template/layout
 
-Name of template. In order to use another template, change
+Name of template/layout. In order to use another template or layout, change
 the value in the hashref.
 
     hook 'before_navigation_display' => sub {
@@ -159,6 +169,7 @@ the value in the hashref.
 
         if ($navigation_data->{navigation}->uri =~ /^admin/) {
              $navigation_data->{template} = 'admin_listing';
+             $navigation_data->{layout} = 'no_left';
         }
     };
 
@@ -193,25 +204,32 @@ our $object_autodetect = 0;
 
 our %route_defaults = (
     account => {login => {template => 'login',
+                          layout => config->{'layout'},
                           uri => 'login',
                           success_uri => '',
                       },
                 logout => {template => 'logout',
+                           layout => config->{'layout'},
                            uri => 'logout',
                        },
             },
     cart => {template => 'cart',
+             layout => config->{'layout'},
              uri => 'cart',
              active => 1,
          },
     checkout => {template => 'checkout',
+                 layout => config->{'layout'},
                  uri => 'checkout',
                  active => 0,
              },
     navigation => {template => 'listing',
+                   layout => config->{'layout'},
                    records => 0,
                },
-    product => {template => 'product'},
+    product => {template => 'product',
+                layout => config->{'layout'},
+               },
 );
 
 sub _setup_routes {
@@ -285,7 +303,8 @@ sub _setup_routes {
 
                 execute_hook('before_product_display', $tokens);
 
-                my $output = template $routes_config->{product}->{template}, $tokens;
+                my $output = template $routes_config->{product}->{template},
+                    { layout => $tokens, $routes_config->{product}->{layout} };
 
                 # temporary way to erase cart errors from missing variants
                 session shop_cart_error => undef;
@@ -316,18 +335,25 @@ sub _setup_routes {
 
             # navigation item found
 
-            # retrieve navigation attribute for template
+            # retrieve navigation attribute for template and layout 
             my $template = $routes_config->{navigation}->{template};
+            my $layout = $routes_config->{navigation}->{layout};
 
-            if ( my $attr_value = $nav->find_attribute_value('template') ) {
-                debug "Change template name from $template to $attr_value due to navigation attribute.";
-                $template = $attr_value;
+            if ( my $template_attr_value = $nav->find_attribute_value('template') ) {
+                debug "Change template name from $template to $template_attr_value due to navigation attribute.";
+                $template = $template_attr_value;
+            }
+
+            if ( my $layout_attr_value = $nav->find_attribute_value('layout') ) {
+                debug "Change layout name from $layout to $layout_attr_value due to navigation attribute.";
+                $layout = $layout_attr_value;
             }
 
             my $tokens = {
                 navigation => $nav,
                 page       => $page,
-                template   => $template
+                template   => $template,
+                layout     => $layout
             };
 
             execute_hook('before_navigation_search', $tokens);
@@ -367,7 +393,8 @@ sub _setup_routes {
 
             execute_hook('before_navigation_display', $tokens);
 
-            return template $tokens->{template}, $tokens;
+            return template $tokens->{template}, $tokens,
+            { layout => $tokens->{layout} };
         }
 
         # check for uri redirect record
