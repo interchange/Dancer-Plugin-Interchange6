@@ -23,7 +23,9 @@ use Scalar::Util 'blessed';
 use Try::Tiny;
 
 use Moo;
-use Interchange6::Types;
+use MooseX::CoverableModifiers;
+use Types::Standard qw/Str/;
+
 extends 'Interchange6::Cart';
 
 use namespace::clean;
