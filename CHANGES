@@ -1,5 +1,13 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.100 Mon Aug 31 17:24:07 2015 CEST
+
+    [ENHANCEMENTS]
+
+    * Switch Cart class to Type::Tiny and
+      MooseX::CoverableModifiers (Peter Mottram).
+    * Add shop_redirect keyword (Peter Mottram).
+
 0.086 Wed Jul  1 17:17:19 2015 CEST
 
     [ENHANCEMENTS]

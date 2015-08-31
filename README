@@ -2,7 +2,7 @@ NAME
     Dancer::Plugin::Interchange6 - Interchange6 Shop Plugin for Dancer
 
 VERSION
-    Version 0.086
+    Version 0.100
 
 REQUIREMENTS
     All Interchange6 Dancer applications need to use the
@@ -68,6 +68,9 @@ KEYWORDS
 
   shop_charge
     Creates payment order and authorizes amount.
+
+  shop_redirect
+    Calls Interchange6::Schema::ResultSet::UriRedirect with given args.
 
   shop_schema
     Returns Interchange6::Schema object.
