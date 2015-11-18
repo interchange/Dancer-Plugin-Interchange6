@@ -3,7 +3,7 @@ package Role::Deploy;
 use Test::Exception;
 use Test::More;
 
-use Dancer qw/set/;
+use Dancer qw/set setting/;
 use Dancer::Plugin::Interchange6;
 
 use namespace::clean;
@@ -12,12 +12,12 @@ use Test::Roo::Role;
 test 'deploy tests' => sub {
     my $self = shift;
 
-    set plugins => {
-        DBIC => {
-            default => {
-                schema_class => $self->schema_class,
-                connect_info => [ $self->connect_info ],
-            }
+    diag "Role::Deploy";
+
+    setting('plugins')->{DBIC} = {
+        default => {
+            schema_class => $self->schema_class,
+            connect_info => [ $self->connect_info ],
         }
     };
 
