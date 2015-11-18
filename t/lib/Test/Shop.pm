@@ -1,15 +1,10 @@
 package Test::Shop;
 
-use Test::Most;
+use Test::Exception;
+use Test::More;
 use Test::Roo::Role;
-use Interchange6::Schema;
-use Dancer qw(:tests !after);
-use Dancer::Plugin::Interchange6;
-use Dancer::Plugin::DBIC;
-use Dancer::Test;
 
-use Data::Dumper;
-use DateTime;
+use Dancer::Plugin::Interchange6;
 
 test 'misc shop tests' => sub {
     my $self = shift;
