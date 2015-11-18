@@ -1,15 +1,14 @@
 package Test::Cart;
 
 use Test::Most;
-use Test::Roo::Role;
-use Interchange6::Schema;
-use Dancer qw(:tests !after);
-use Dancer::Plugin::Interchange6;
-use Dancer::Plugin::DBIC;
-use Dancer::Test;
 
-use Data::Dumper;
+use Dancer qw/debug hook setting var/;
+use Dancer::Logger::Capture;
+use Dancer::Plugin::Interchange6;
 use DateTime;
+
+use namespace::clean;
+use Test::Roo::Role;
 
 test 'cart tests' => sub {
     my $self = shift;
@@ -17,10 +16,11 @@ test 'cart tests' => sub {
     diag "Test::Cart";
 
     my $dt_now = DateTime->now;
+    my $trap   = Dancer::Logger::Capture->trap;
 
     my ( $cart, $product, $name, $ret, $time, $i, $log );
 
-    my $schema = schema;
+    my $schema = shop_schema;
 
     set log    => 'debug';
     set logger => 'capture';
@@ -32,7 +32,7 @@ test 'cart tests' => sub {
         '==', 1, "1 cart in the database" );
     cmp_ok( $cart->id, '==', 1, "cart id is 1" );
 
-    $log = pop @{&read_logs};
+    $log = pop @{$trap->read};
     cmp_deeply(
         $log,
         { level => "debug", message => "New cart 1 main." },
@@ -51,7 +51,7 @@ test 'cart tests' => sub {
 
     cmp_ok( $cart->id, '==', 2, "cart id is 2" );
 
-    $log = pop @{&read_logs};
+    $log = pop @{$trap->read};
     cmp_deeply(
         $log,
         { level => "debug", message => "New cart 2 new." },
@@ -226,11 +226,10 @@ test 'cart tests' => sub {
         "Add before_cart_remove hook"
     );
 
-    throws_ok(
-        sub { $cart->remove('os28005') },
+    throws_ok { $cart->remove('os28005') }
         qr/Product not removed due to hook/,
         "fail to remove product os28005 using remove due to hook"
-    );
+    ;
 
     throws_ok(
         sub { $cart->update(os28005 => 0) },
@@ -296,14 +295,14 @@ test 'cart tests' => sub {
         qr/Test error/, "fail add product with sku os28062 due to price hook" );
     cmp_ok( $cart->count, '==', 0, "cart count is 0" );
 
-    $log = pop @{&read_logs};
+    $log = pop @{$trap->read};
     ok( !defined $log, "nothing in the logs" );
 
     lives_ok( sub { $ret = $cart->add('os28064') },
         "add product with sku os28064 not prevented by price hook" );
     cmp_ok( $cart->count, '==', 1, "cart count is 1" );
 
-    $log = pop @{&read_logs};
+    $log = pop @{$trap->read};
     cmp_deeply(
         $log,
         {
@@ -321,7 +320,7 @@ test 'cart tests' => sub {
     lives_ok { $cart = cart } "Create a new cart";
     cmp_ok( $cart->id, '==', 3, "cart id is 3" );
 
-    $log = &read_logs;
+    $log = $trap->read;
     cmp_deeply(
         $log,
         [
@@ -382,11 +381,11 @@ test 'cart tests' => sub {
     
     setting('plugins')->{Interchange6}->{carts_var_name} = "foobar";
 
-    &read_logs;
+    $trap->read;
 
     lives_ok { $cart = cart } "Create a new cart";
 
-    $log = &read_logs;
+    $log = $trap->read;
     cmp_deeply(
         $log,
         [
