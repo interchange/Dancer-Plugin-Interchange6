@@ -32,6 +32,7 @@ WriteMakefile(
                   'Business::OnlinePayment' => 3.02,
                   'Class::Load' => 0,
                   'MooseX::CoverableModifiers' => 0,
+                  'namespace::clean' => 0,
                   'Type::Tiny' => 0,
                   # Net::HTTPS::Any is required by Business::OnlinePayment but
                   # versions before 0.11 have a habit of failing to install
