@@ -18,6 +18,7 @@ WriteMakefile(
                             'DBICx::TestDatabase' => 0,
                             'Test::Database' => 0,
                             'Test::Roo' => 1.004,
+                            'Test::WWW::Mechanize::PSGI' => '0.35',
                       },
     PREREQ_PM => {
                   'YAML'       => 0,
