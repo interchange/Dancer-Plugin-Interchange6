@@ -2,10 +2,9 @@ package Test::Cart;
 
 use Test::Most;
 
-use Dancer qw/debug hook setting var/;
+use Dancer qw/debug hook set setting var/;
 use Dancer::Logger::Capture;
 use Dancer::Plugin::Interchange6;
-use DateTime;
 
 use namespace::clean;
 use Test::Roo::Role;
@@ -15,15 +14,14 @@ test 'cart tests' => sub {
 
     diag "Test::Cart";
 
-    my $dt_now = DateTime->now;
-    my $trap   = Dancer::Logger::Capture->trap;
-
     my ( $cart, $product, $name, $ret, $time, $i, $log );
 
     my $schema = shop_schema;
 
     set log    => 'debug';
     set logger => 'capture';
+
+    my $trap   = Dancer::Logger::Capture->trap;
 
     # Get / set cart name
     $cart = cart;
@@ -296,7 +294,7 @@ test 'cart tests' => sub {
     cmp_ok( $cart->count, '==', 0, "cart count is 0" );
 
     $log = pop @{$trap->read};
-    ok( !defined $log, "nothing in the logs" );
+    ok( !defined $log, "nothing in the logs" ) or diag explain $log;
 
     lives_ok( sub { $ret = $cart->add('os28064') },
         "add product with sku os28064 not prevented by price hook" );

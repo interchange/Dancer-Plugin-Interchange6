@@ -2,20 +2,15 @@ package Role::Deploy;
 
 use Test::Exception;
 use Test::More;
-use Test::Roo::Role;
-use Interchange6::Schema;
 
-use Dancer qw(:tests !after);
+use Dancer qw/set/;
 use Dancer::Plugin::Interchange6;
-use Dancer::Plugin::DBIC;
-use Dancer::Test;
 
-use DateTime;
+use namespace::clean;
+use Test::Roo::Role;
 
 test 'deploy tests' => sub {
     my $self = shift;
-
-    diag "Role::Deploy";
 
     set plugins => {
         DBIC => {
@@ -26,7 +21,7 @@ test 'deploy tests' => sub {
         }
     };
 
-    my $schema = schema;
+    my $schema = shop_schema;
 
     set session => 'DBIC';
     set session_options => { schema => $schema, };
