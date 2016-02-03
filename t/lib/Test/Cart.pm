@@ -5,16 +5,127 @@ use Test::Most;
 use Dancer qw/debug hook set setting var/;
 use Dancer::Logger::Capture;
 use Dancer::Plugin::Interchange6;
+use Dancer::Plugin::Interchange6::Cart;
 
 use namespace::clean;
 use Test::Roo::Role;
 
+test 'test BUILDARGS and BUILD' => sub {
+    plan tests => 21;
+
+    my $self   = shift;
+    my $schema = $self->ic6s_schema;
+    my $trap   = Dancer::Logger::Capture->trap;
+    $trap->read;
+
+    my ( $cart, $log );
+
+    # new cart with no args
+
+    lives_ok { $cart = Dancer::Plugin::Interchange6::Cart->new }
+    "new cart with no args lives";
+
+    $log = $trap->read->[0];
+    cmp_deeply(
+        $log,
+        { level => "debug", message => re(qr/^New cart \d+ main\.$/) },
+        'debug: New cart \d+ main.'
+    ) or diag explain $log;
+
+    cmp_ok $schema->resultset('Cart')->count, '==', 1, "1 cart in the database";
+
+    # get same cart
+
+    lives_ok { $cart = Dancer::Plugin::Interchange6::Cart->new }
+    "repeat new cart with no args lives";
+
+    $log = $trap->read->[0];
+    cmp_deeply(
+        $log,
+        { level => "debug", message => re(qr/^Existing cart: \d+ main\.$/) },
+        'debug: Existing cart: \d+ main.'
+    ) or diag explain $log;
+
+    cmp_ok $schema->resultset('Cart')->count, '==', 1, "1 cart in the database";
+
+    # new cart with args
+
+    lives_ok {
+        $cart = Dancer::Plugin::Interchange6::Cart->new(
+            database    => 'default',
+            name        => 'new',
+            sessions_id => undef,
+          )
+    }
+    "new cart with database, name and sessions_id (undef)";
+
+    $log = $trap->read->[0];
+    cmp_deeply(
+        $log,
+        { level => "debug", message => re(qr/^New cart \d+ new\.$/) },
+        'debug: New cart \d+ main.'
+    ) or diag explain $log;
+
+    cmp_ok $schema->resultset('Cart')->count, '==', 2,
+      "2 carts in the database";
+
+    # new cart with args as hashref
+
+    lives_ok {
+        $cart = Dancer::Plugin::Interchange6::Cart->new(
+            database    => 'default',
+            name        => 'hashref',
+            sessions_id => undef,
+          )
+    }
+    "new cart with database, name and sessions_id (undef) hashref";
+
+    $log = $trap->read->[0];
+    cmp_deeply(
+        $log,
+        { level => "debug", message => re(qr/^New cart \d+ hashref\.$/) },
+        'debug: New cart \d+ hashref.'
+    ) or diag explain $log;
+
+    cmp_ok $schema->resultset('Cart')->count, '==', 3,
+      "3 carts in the database";
+
+    # add a product to the cart so we can check that it gets reloaded
+    # when cart->new is called next time
+
+    lives_ok { $cart = Dancer::Plugin::Interchange6::Cart->new }
+    "get default cart";
+
+    cmp_ok $schema->resultset('CartProduct')->count, '==', 0,
+      "0 cart_products in the database";
+
+    lives_ok { $cart->add('os28085-6') } "add variant os28085-6";
+
+    cmp_ok $schema->resultset('CartProduct')->count, '==', 1,
+      "1 cart_product in the database";
+
+    cmp_ok $schema->resultset('Cart')->find( $cart->id )->cart_products->count,
+      '==', 1,
+      "our cart has 1 product in the database";
+
+    cmp_ok $cart->count, '==', 1, "cart count is 1";
+
+    lives_ok { $cart = Dancer::Plugin::Interchange6::Cart->new }
+    "refetch the cart";
+
+    cmp_ok $cart->count, '==', 1, "cart count is 1";
+
+    cmp_ok $cart->product_get(0)->sku, 'eq', 'os28085-6',
+      "and we have the expected product in the cart";
+
+    # cleanup
+    $schema->resultset('Cart')->delete;
+};
+
 test 'cart tests' => sub {
     my $self = shift;
 
-    diag "Test::Cart";
-
-    my ( $cart, $product, $name, $ret, $time, $i, $log );
+    my ( $cart, $cart_id, $product, $name, $ret, $time, $log );
 
     my $schema = shop_schema;
 
@@ -28,14 +139,13 @@ test 'cart tests' => sub {
 
     cmp_ok( $schema->resultset('Cart')->count,
         '==', 1, "1 cart in the database" );
-    cmp_ok( $cart->id, '==', 1, "cart id is 1" );
 
     $log = pop @{$trap->read};
     cmp_deeply(
         $log,
-        { level => "debug", message => "New cart 1 main." },
+        { level => "debug", message => re(qr/^New cart \d+ main\.$/) },
         "Check cart BUILDARGS debug message"
-    ) or diag Dumper($log);
+    ) or diag explain $log;
 
     $name = $cart->name;
     ok( $name eq 'main', "Testing default name." );
@@ -47,22 +157,22 @@ test 'cart tests' => sub {
     $cart     = cart('new');
     $product = {};
 
-    cmp_ok( $cart->id, '==', 2, "cart id is 2" );
+    $name = $cart->name;
+    ok( $name eq 'new', "Testing cart name." );
 
     $log = pop @{$trap->read};
     cmp_deeply(
         $log,
-        { level => "debug", message => "New cart 2 new." },
+        { level => "debug", message => re(qr/^New cart \d+ new\.$/) },
         "Check cart BUILDARGS debug message"
-    ) or diag Dumper($log);
+    ) or diag explain $log;
 
     $ret = $schema->resultset('Cart')->search( {}, { order_by => 'carts_id' } );
     cmp_ok( $ret->count, '==', 2, "2 carts in the database" );
+    my $cart_main_id = $ret->first->id;
 
-    $i = 0;
     while ( my $rec = $ret->next ) {
-        cmp_ok( $rec->carts_id, 'eq', ++$i, "cart id is: " . $i );
-        if ( $i == 1 ) {
+        if ( $rec->carts_id == $cart_main_id ) {
             cmp_ok( $rec->name, 'eq', 'discount', "Cart 1 name is discount" );
         }
         else {
@@ -264,7 +374,6 @@ test 'cart tests' => sub {
         qr/Test error/, "fail add product with sku os28007 due to hook" );
 
     cmp_ok( $cart->count, '==', 0, "cart is still empty" );
-    cmp_ok( $cart->id,    '==', 2, "cart id is still 2" );
 
     lives_ok {
         hook 'before_cart_add' => sub {
@@ -305,10 +414,10 @@ test 'cart tests' => sub {
         $log,
         {
             level   => "debug",
-            message => "added to cart id 2 these skus: os28064"
+            message => re(qr/^added to cart id \d+ these skus: os28064$/)
         },
         "debug message from hook found in logs"
-    ) or diag Dumper($log);
+    ) or diag explain $log;
 
     # Seed
 
@@ -316,27 +425,23 @@ test 'cart tests' => sub {
         "undef var ic6_carts so new cart will not come from cache" );
 
     lives_ok { $cart = cart } "Create a new cart";
-    cmp_ok( $cart->id, '==', 3, "cart id is 3" );
 
     $log = $trap->read;
     cmp_deeply(
         $log,
         [
             { level => "debug", message => "carts_var_name: ic6_carts" },
-            { level => "debug", message => "New cart 3 main." },
+            { level => "debug", message => re(qr/^New cart \d+ main\./) },
         ],
         "Check cart BUILDARGS debug message"
-    ) or diag Dumper($log);
-
-    lives_ok { $cart = cart } "calling cart again should return same cart";
-    cmp_ok( $cart->id, '==', 3, "cart id is 3" );
+    ) or diag explain $log;
 
     $ret = $schema->resultset('Cart')->search( {}, { order_by => 'carts_id' } );
     cmp_ok( $ret->count, '==', 3, "3 carts in the database" );
 
-    $i = 0;
+    my $i = 0;
     while ( my $rec = $ret->next ) {
-        cmp_ok( $rec->carts_id, 'eq', ++$i, "cart id is: " . $i );
+        $i++;
         if ( $i == 1 ) {
             cmp_ok( $rec->name, 'eq', 'discount', "Cart 1 name is discount" );
         }
@@ -391,7 +496,7 @@ test 'cart tests' => sub {
             { level => "debug", message => re('New cart \d+ main') },
         ],
         "Check cart BUILDARGS debug message"
-    ) or diag Dumper($log);
+    ) or diag explain $log;
 
     # subclassed cart
 
