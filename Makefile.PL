@@ -14,7 +14,9 @@ WriteMakefile(
     PL_FILES            => {},
     EXE_FILES           => ['bin/interchange6-expire-sessions'],
     BUILD_REQUIRES      => {
-                            'Test::Most' => 0,
+                            'Test::More' => 0,
+                            'Test::Deep' => 0,
+                            'Test::Exception' => 0,
                             'DBICx::TestDatabase' => 0,
                             'Test::Database' => 0,
                             'Test::Roo' => 1.004,

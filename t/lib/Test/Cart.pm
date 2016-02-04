@@ -1,6 +1,8 @@
 package Test::Cart;
 
-use Test::Most;
+use Test::More;
+use Test::Deep;
+use Test::Exception;
 
 use Dancer qw/debug hook set setting var/;
 use Dancer::Logger::Capture;

@@ -7,7 +7,9 @@ package Test::Routes;
 # IMPORTANT: these tests cannot live directly under 't' since Dancer merrily
 # trashes appdir under certain circumstances when we live there.
 
-use Test::Most;
+use Test::More;
+use Test::Deep;
+use Test::Exception;
 
 use Dancer qw/config set/;
 use Dancer::Logger::Capture;
