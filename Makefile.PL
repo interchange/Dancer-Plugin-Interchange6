@@ -10,7 +10,7 @@ WriteMakefile(
     ($ExtUtils::MakeMaker::VERSION >= 6.47
       ? ('LICENSE'=> 'perl')
       : ()),
-    MIN_PERL_VERSION    => '5.014000',
+    MIN_PERL_VERSION    => '5.010000',
     PL_FILES            => {},
     EXE_FILES           => ['bin/interchange6-expire-sessions'],
     BUILD_REQUIRES      => {
