@@ -11,5 +11,5 @@ perl:
 install:
   - cpanm --quiet --notest git://github.com/interchange/Interchange6.git
   - cpanm --quiet --notest git://github.com/interchange/interchange6-schema.git
-  - cpanm --quiet --notest DBD::Pg Test::PostgreSQL DBD::mysql Test::mysqld DateTime::Format::Pg Test::Roo
+  - cpanm --quiet --notest DBD::Pg Test::PostgreSQL@1.06 DBD::mysql Test::mysqld DateTime::Format::Pg Test::Roo
   - cpanm --quiet --installdeps --notest .
