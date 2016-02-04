@@ -24,7 +24,7 @@ use Try::Tiny;
 
 use Moo;
 use MooseX::CoverableModifiers;
-use Types::Standard qw/Str/;
+use Types::Standard qw/InstanceOf Str/;
 
 extends 'Interchange6::Cart';
 
@@ -39,67 +39,32 @@ inherited by this module.
 
 The database name as defined in the L<Dancer::Plugin::DBIC> configuration.
 
-Attribute is required.
+Defaults to 'default'.
 
 =cut
 
 has database => (
     is       => 'ro',
     isa      => Str,
-    required => 1,
+    default  => 'default',
 );
 
-=head2 sessions_id
-
-Extends inherited sessions_id attribute.
-
-Attribute is required.
+=head2 dbic_cart
 
 =cut
 
-has '+sessions_id' => ( required => 1, );
+has dbic_cart => (
+    is => 'lazy',
+    isa => InstanceOf['Interchange6::Schema::Result::Cart'],
+);
 
-=head1 METHODS
-
-See L<Interchange6::Cart/METHODS> for a full list of methods inherited by
-this module.
-
-=head2 get_sessions_id
-
-=head2 BUILDARGS
-
-Sets default values for name, database and sessions_id if not given and
-loads other attribute values from DB cart. If DB cart does not exist then
-create new one.
-
-=cut
-
-sub BUILDARGS {
+sub _build_dbic_cart {
     my $self = shift;
 
-    my %args;
-
-    # can be passed a hashref or a hash
-
-    if ( @_ % 2 == 1 ) {
-
-        # hashref
-        %args = %{ $_[0] };
-    }
-    else {
-
-        # hash
-        %args = @_;
-    }
-
-    $args{'database'}    = 'default'   unless $args{'database'};
-    $args{'name'}        = 'main'      unless $args{'name'};
-    $args{'sessions_id'} = session->id unless $args{'sessions_id'};
-
-    my $cart = schema( $args{'database'} )->resultset('Cart')->find_or_new(
+    my $cart = schema( $self->database )->resultset('Cart')->find_or_new(
         {
-            name        => $args{'name'},
-            sessions_id => $args{'sessions_id'},
+            name        => $self->name,
+            sessions_id => $self->sessions_id,
         },
         { key => 'carts_name_sessions_id' }
     );
@@ -111,15 +76,69 @@ sub BUILDARGS {
         $cart->insert;
         debug( "New cart ", $cart->carts_id, " ", $cart->name, "." );
     }
-
-    $args{'id'} = $cart->carts_id;
-
-    return \%args;
+    return $cart;
 }
+
+=head2 dbic_cart_products
+
+L</dbic_cart> related resultset C<cart_products> with prefetched C<product>.
+
+=cut
+
+has dbic_cart_products => (
+    is => 'lazy',
+    isa => InstanceOf['DBIx::Class::ResultSet'],
+);
+
+sub _build_dbic_cart_products {
+    return shift->dbic_cart->related_resultset('cart_products')->search(
+        undef,
+        {
+            prefetch => 'product'
+        }
+    );
+}
+
+=head2 id
+
+Extends inherited L<Interchange6::Cart/id> attribute.
+
+Defaults to C<id> of L</dbic_cart>.
+
+=cut
+
+has '+id' => (
+    is => 'lazy',
+);
+
+sub _build_id {
+    return shift->dbic_cart->id,
+}
+
+=head2 sessions_id
+
+Extends inherited sessions_id attribute.
+
+Defaults to C<< session->id >>.
+
+=cut
+
+has '+sessions_id' => (
+    is => 'lazy',
+);
+
+sub _build_sessions_id {
+    return session->id;
+}
+
+=head1 METHODS
+
+See L<Interchange6::Cart/METHODS> for a full list of methods inherited by
+this module.
 
 =head2 BUILD
 
-Load existing cart from the database along with any products it contains and add cart hooks.
+Load existing cart from the database along with any products it contains.
 
 =cut
 
@@ -127,20 +146,8 @@ sub BUILD {
     my $self = shift;
     my ( @products, $roles );
 
-    my $rset = schema( $self->database )->resultset('Cart')->find(
-        {
-            name        => $self->name,
-            sessions_id => $self->sessions_id,
-        },
-        { key => 'carts_name_sessions_id' }
-      )->search_related(
-        'cart_products',
-        undef,
-        {
-            prefetch => 'product',
-            order_by => [ 'cart_position', 'cart_products_id' ]
-        }
-      );
+    my $rset = $self->dbic_cart_products->order_by( 'cart_position',
+        'cart_products_id' );
 
     if (logged_in_user) {
         $roles = user_roles;
@@ -235,8 +242,6 @@ around 'add' => sub {
 
     # add products to cart
 
-    my $cart = schema( $self->database )->resultset('Cart')->find( $self->id );
-
     foreach my $product ( @products ) {
 
         # bubble up the add
@@ -244,16 +249,15 @@ around 'add' => sub {
 
         # update or create in db
 
-        my $cart_product = $cart->cart_products->search(
-            { carts_id => $self->id, sku => $product->{sku} },
-            { rows     => 1 } )->single;
+        my $cart_product =
+          $self->dbic_cart_products->search( { 'me.sku' => $product->{sku} },
+            { rows => 1 } )->single;
 
         if ( $cart_product ) {
             $cart_product->update({ quantity => $ret->quantity });
         }
         else {
-            $cart_product = $cart->create_related(
-                'cart_products',
+            $cart_product = $self->dbic_cart_products->create(
                 {
                     sku           => $ret->sku,
                     quantity      => $ret->quantity,
@@ -292,10 +296,7 @@ around clear => sub {
     $orig->( $self, @_ );
 
     # delete all products from this cart
-    my $rs =
-      schema( $self->database )->resultset('Cart')
-      ->search( { 'cart_products.carts_id' => $self->id } )
-      ->search_related( 'cart_products', {} )->delete_all;
+    $self->dbic_cart_products->delete_all;
 
     execute_hook( 'after_cart_clear', $self );
 
@@ -326,7 +327,7 @@ sub load_saved_products {
         }
     )->search_related( 'cart_products', {}, );
 
-    # now find old carts and see if they have products we should move into
+    # find old carts and see if they have products we should move into
     # our new cart + remove the old carts as we go
 
     $result = schema( $self->database )->resultset('Cart')->search(
@@ -351,12 +352,13 @@ sub load_saved_products {
 
             # look for this sku in our current cart
 
-            my $new_rs = $current_cart_rs->search( { sku => $record->sku } );
+            my $product =
+              $self->dbic_cart_products->search( { sku => $record->sku },
+                { rows => 1 } )->single;
 
-            if ( $new_rs->count > 0 ) {
+            if ( $product ) {
 
                 # we have this sku in our new cart so update quantity
-                my $product = $new_rs->next;
                 $product->update(
                     {
                         quantity => $product->quantity + $record->quantity
@@ -396,13 +398,7 @@ around remove => sub {
 
     my $ret = $orig->( $self, $arg );
 
-    my $cp = schema( $self->database )->resultset('CartProduct')->find(
-        {
-            carts_id => $self->id,
-            sku      => $ret->sku
-        }
-    );
-    $cp->delete;
+    $self->dbic_cart_products->search( { 'me.sku' => $ret->sku } )->delete;
 
     execute_hook( 'after_cart_remove', $self, $arg );
 
@@ -428,8 +424,7 @@ around rename => sub {
 
     my $ret = $orig->( $self, $new_name );
 
-    schema( $self->database )->resultset('Cart')->find( $self->id )
-      ->update( { name => $new_name } );
+    $self->dbic_cart->update( { name => $new_name } );
 
     execute_hook( 'after_cart_rename', $ret, $old_name, $new_name );
 
@@ -439,14 +434,11 @@ around rename => sub {
 sub _find_and_update {
     my ( $self, $sku, $new_product ) = @_;
 
-    my $cp = schema( $self->database )->resultset('CartProduct')->find(
+    $self->dbic_cart_products->search(
         {
-            carts_id => $self->id,
-            sku      => $sku
+            'me.sku' => $sku
         }
-    );
-
-    $cp->update($new_product);
+    )->update($new_product);
 }
 
 =head2 set_sessions_id
@@ -464,12 +456,7 @@ around set_sessions_id => sub {
 
     debug( "Change sessions_id of cart " . $self->id . " to: ", $arg );
 
-    if ( $self->id ) {
-
-        # cart is already in database so update sessions_id there
-        schema( $self->database )->resultset('Cart')->find( $self->id )
-          ->update($arg);
-    }
+    $self->dbic_cart->update({ sessions_id => $arg });
 
     execute_hook( 'after_cart_set_sessions_id', $ret, $arg );
 
@@ -491,11 +478,7 @@ around set_users_id => sub {
 
     my $ret = $orig->( $self, $arg );
 
-    if ( $self->id ) {
-        # cart is already in database so update
-        schema( $self->database )->resultset('Cart')->find( $self->id )
-          ->update( { users_id => $arg } );
-    }
+    $self->dbic_cart->update( { users_id => $arg } );
 
     execute_hook( 'after_cart_set_users_id', $ret, $arg );
 

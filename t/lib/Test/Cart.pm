@@ -10,8 +10,8 @@ use Dancer::Plugin::Interchange6::Cart;
 use namespace::clean;
 use Test::Roo::Role;
 
-test 'test BUILDARGS and BUILD' => sub {
-    plan tests => 21;
+test 'cart unit tests' => sub {
+    #plan tests => 21;
 
     my $self   = shift;
     my $schema = $self->ic6s_schema;
@@ -34,6 +34,8 @@ test 'test BUILDARGS and BUILD' => sub {
 
     cmp_ok $schema->resultset('Cart')->count, '==', 1, "1 cart in the database";
 
+    cmp_ok $cart->dbic_cart->id, '==', $cart->id, "Cart->id is set";
+
     # get same cart
 
     lives_ok { $cart = Dancer::Plugin::Interchange6::Cart->new }
@@ -52,12 +54,11 @@ test 'test BUILDARGS and BUILD' => sub {
 
     lives_ok {
         $cart = Dancer::Plugin::Interchange6::Cart->new(
-            database    => 'default',
-            name        => 'new',
-            sessions_id => undef,
+            database => 'default',
+            name     => 'new',
           )
     }
-    "new cart with database, name and sessions_id (undef)";
+    "new cart with database and name";
 
     $log = $trap->read->[0];
     cmp_deeply(
@@ -73,10 +74,9 @@ test 'test BUILDARGS and BUILD' => sub {
 
     lives_ok {
         $cart = Dancer::Plugin::Interchange6::Cart->new(
-            database    => 'default',
-            name        => 'hashref',
-            sessions_id => undef,
-          )
+            database => 'default',
+            name     => 'hashref',
+        );
     }
     "new cart with database, name and sessions_id (undef) hashref";
 
@@ -122,7 +122,7 @@ test 'test BUILDARGS and BUILD' => sub {
     $schema->resultset('Cart')->delete;
 };
 
-test 'cart tests' => sub {
+test 'main cart tests' => sub {
     my $self = shift;
 
     my ( $cart, $cart_id, $product, $name, $ret, $time, $log );
