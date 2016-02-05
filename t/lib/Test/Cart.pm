@@ -127,7 +127,7 @@ test 'cart unit tests' => sub {
 test 'main cart tests' => sub {
     my $self = shift;
 
-    my ( $cart, $cart_id, $product, $name, $ret, $time, $log );
+    my ( $cart, $cart_id, $product, $name, $ret, @products, $time, $log );
 
     my $schema = shop_schema;
 
@@ -146,7 +146,7 @@ test 'main cart tests' => sub {
     cmp_deeply(
         $log,
         { level => "debug", message => re(qr/^New cart \d+ main\.$/) },
-        "Check cart BUILDARGS debug message"
+        "Check cart debug message"
     ) or diag explain $log;
 
     $name = $cart->name;
@@ -166,7 +166,7 @@ test 'main cart tests' => sub {
     cmp_deeply(
         $log,
         { level => "debug", message => re(qr/^New cart \d+ new\.$/) },
-        "Check cart BUILDARGS debug message"
+        "Check cart debug message"
     ) or diag explain $log;
 
     $ret = $schema->resultset('Cart')->search( {}, { order_by => 'carts_id' } );
@@ -290,8 +290,23 @@ test 'main cart tests' => sub {
     cmp_ok( sprintf( "%.2f", $cart->total ),
         '==', 134.88, "cart total is 134.88" );
 
+    # add array reference of products
+
+    cmp_ok $cart->quantity, '==', 12, "cart quantity is 12";
+    lives_ok {
+        @products =
+          $cart->add( [ 'os28005', { sku => 'os28006', quantity => 3 } ] )
+    }
+    "add arrayref of os28005 and qty 3 of os28006";
+    cmp_ok( $cart->count, '==', 2,
+        "Check number of products in the cart is 2" );
+    cmp_ok $cart->quantity, '==', 16, "cart quantity is 16";
+    cmp_ok @products, '==', 2, "array of 2 products returned";
+
     # Update product(s)
 
+    lives_ok { $cart->update( os28005 => 10 ) }
+    "Change quantity of os28005 to 10";
     lives_ok { $cart->update( os28006 => 5 ) }
     "Change quantity of os28006 to 5";
     cmp_ok( $cart->count, '==', 2, "cart count after update of os28006." );
@@ -435,7 +450,7 @@ test 'main cart tests' => sub {
             { level => "debug", message => "carts_var_name: ic6_carts" },
             { level => "debug", message => re(qr/^New cart \d+ main\./) },
         ],
-        "Check cart BUILDARGS debug message"
+        "Check cart debug message"
     ) or diag explain $log;
 
     $ret = $schema->resultset('Cart')->search( {}, { order_by => 'carts_id' } );
@@ -497,7 +512,7 @@ test 'main cart tests' => sub {
             { level => "debug", message => "carts_var_name: foobar" },
             { level => "debug", message => re('New cart \d+ main') },
         ],
-        "Check cart BUILDARGS debug message"
+        "Check cart debug message"
     ) or diag explain $log;
 
     # subclassed cart
@@ -519,6 +534,8 @@ test 'main cart tests' => sub {
     lives_ok( sub { $cart->test_attribute("foobar") }, "set test_attribute" );
     cmp_ok( $cart->test_attribute, 'eq', 'foobar', "has test_attribute" );
 
+    # calling load_saved_products with no logged in user
+    ok ! defined $cart->load_saved_products, "load_saved_products";
 };
 
 1;
