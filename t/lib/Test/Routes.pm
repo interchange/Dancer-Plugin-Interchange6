@@ -36,6 +36,9 @@ test 'route tests' => sub {
 
     my $trap = Dancer::Logger::Capture->trap;
 
+    # make sure there are no existing carts
+    $schema->resultset('Cart')->delete_all;
+
     $mech->get_ok( '/ergo-roller', "GET /ergo-roller (product route via uri)" );
 
     $mech->content_like( qr|name="Ergo Roller"|, 'found Ergo Roller' )
@@ -322,6 +325,9 @@ test 'route tests' => sub {
         qr/cart=".+:Ergo Roller:2:16.+,os28004-CAM-WHT:.+:1:16/,
         'found 2 ergo roller variants at checkout' ) or diag $mech->content;
 
+    my @carts = $schema->resultset('Cart')->hri->all;
+    cmp_ok @carts, '==', 1, "1 cart in the database";
+
     # logout
 
     $mech->get_ok( '/logout', "GET /logout" );
@@ -342,6 +348,50 @@ test 'route tests' => sub {
     $mech->content_like( qr/cart_total="0/, 'cart_total is 0' );
 
     $mech->content_like( qr/cart=""/, 'cart is empty' );
+
+    # add items to cart then login again to test cart combining via
+    # load_saved_products
+
+    @carts = $schema->resultset('Cart')->hri->all;
+    cmp_ok @carts, '==', 1, "1 cart in the database";
+
+    $mech->post_ok(
+        '/cart',
+        { sku => 'os28004', roller => 'camel', color => 'white' },
+        "POST /cart add Ergo Roller camel white"
+    );
+
+    @carts = $schema->resultset('Cart')->hri->all;
+    cmp_ok @carts, '==', 1, "1 cart in the database";
+
+    $mech->content_like( qr/cart_subtotal="16/, 'cart_subtotal is 16.00' );
+
+    $mech->content_like( qr/cart_total="16/, 'cart_total is 16.00' );
+
+    $mech->content_like(
+        qr/cart="os28004-CAM-WHT:.+:1:16/,
+        'found qty 1 os28004-CAM-WHT in cart'
+    ) or diag $mech->content;
+
+    $mech->post_ok(
+        '/login',
+        {
+            username => 'customer1',
+            password => 'c1passwd'
+        },
+        "POST /login with good password"
+    );
+
+    $mech->get_ok( '/cart', "GET /cart" );
+
+    $mech->content_like( qr/cart_subtotal="16/, 'cart_subtotal is 16.00' );
+
+    $mech->content_like( qr/cart_total="16/, 'cart_total is 16.00' );
+
+    $mech->content_like(
+        qr/cart="os28004-CAM-WHT:.+:1:16/,
+        'found qty 1 os28004-CAM-WHT in cart'
+    ) or diag $mech->content;
 
     # shop_redirect
     $mech->get( '/old-hand-tools', "GET /old-hand-tools" );
