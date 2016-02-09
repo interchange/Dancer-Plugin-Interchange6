@@ -353,7 +353,7 @@ sub load_saved_products {
             # look for this sku in our current cart
 
             my $product =
-              $self->dbic_cart_products->search( { sku => $record->sku },
+              $self->dbic_cart_products->search( { 'me.sku' => $record->sku },
                 { rows => 1 } )->single;
 
             if ( $product ) {

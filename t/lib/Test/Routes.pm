@@ -27,7 +27,7 @@ test 'route tests' => sub {
 
     diag "Test::Routes";
 
-    my ( $resp, $sessionid, %form, $log, @logs, $user );
+    my ( $resp, $sessionid, %form, $log, @logs, $user, @carts );
 
     my $schema = shop_schema;
 
@@ -325,7 +325,7 @@ test 'route tests' => sub {
         qr/cart=".+:Ergo Roller:2:16.+,os28004-CAM-WHT:.+:1:16/,
         'found 2 ergo roller variants at checkout' ) or diag $mech->content;
 
-    my @carts = $schema->resultset('Cart')->hri->all;
+    @carts = $schema->resultset('Cart')->hri->all;
     cmp_ok @carts, '==', 1, "1 cart in the database";
 
     # logout
@@ -352,8 +352,11 @@ test 'route tests' => sub {
     # add items to cart then login again to test cart combining via
     # load_saved_products
 
-    @carts = $schema->resultset('Cart')->hri->all;
-    cmp_ok @carts, '==', 1, "1 cart in the database";
+    lives_ok { $schema->resultset('Cart')->delete } "delete all carts";
+
+    cmp_ok $schema->resultset('Cart')->count, '==', 0, "no carts in the db";
+    cmp_ok $schema->resultset('CartProduct')->count, '==', 0,
+      "no cart_productss in the db";
 
     $mech->post_ok(
         '/cart',
@@ -361,8 +364,7 @@ test 'route tests' => sub {
         "POST /cart add Ergo Roller camel white"
     );
 
-    @carts = $schema->resultset('Cart')->hri->all;
-    cmp_ok @carts, '==', 1, "1 cart in the database";
+    cmp_ok $schema->resultset('Cart')->count, '==', 1, "1 cart in the db";
 
     $mech->content_like( qr/cart_subtotal="16/, 'cart_subtotal is 16.00' );
 
@@ -382,6 +384,8 @@ test 'route tests' => sub {
         "POST /login with good password"
     );
 
+    cmp_ok $schema->resultset('Cart')->count, '==', 1, "1 cart in the db";
+
     $mech->get_ok( '/cart', "GET /cart" );
 
     $mech->content_like( qr/cart_subtotal="16/, 'cart_subtotal is 16.00' );
@@ -392,6 +396,153 @@ test 'route tests' => sub {
         qr/cart="os28004-CAM-WHT:.+:1:16/,
         'found qty 1 os28004-CAM-WHT in cart'
     ) or diag $mech->content;
+
+    $mech->post_ok(
+        '/cart',
+        { sku => 'os28004', roller => 'camel', color => 'white' },
+        "POST /cart add Ergo Roller camel white (again)"
+    );
+
+    $mech->post_ok(
+        '/cart',
+        { sku => 'os28004', roller => 'camel', color => 'black' },
+        "POST /cart add Ergo Roller camel black"
+    );
+
+    $mech->content_like(
+        qr/cart="os28004-CAM-BLK:Ergo Roller:1:.+,os28004-CAM-WHT:.+:2:16/,
+        'found qty 1 os28004-CAM-BLK and qty 2 os28004-CAM-WHT'
+    ) or diag $mech->content;
+
+    $mech->content_like( qr/cart_subtotal="48/, 'cart_subtotal is 48.00' );
+
+    cmp_ok $schema->resultset('Cart')->count, '==', 1, "1 cart in the db";
+
+    $mech->get_ok( '/logout', "GET /logout" );
+
+    $mech->base_is( 'http://localhost/', "Redirected to /" );
+
+    $mech->get_ok( '/cart', "GET /cart" );
+
+    @carts = $schema->resultset('Cart')->search(
+        undef,
+        {
+            prefetch => 'cart_products',
+            order_by => 'me.carts_id'
+        }
+    )->hri->all;
+
+    cmp_deeply \@carts,
+      [
+        {
+            'cart_products' => bag(
+                {
+                    'cart_position'    => 0,
+                    'cart_products_id' => ignore(),
+                    'carts_id'         => ignore(),
+                    'created'          => ignore(),
+                    'last_modified'    => ignore(),
+                    'quantity'         => 2,
+                    'sku'              => 'os28004-CAM-WHT'
+                },
+                {
+                    'cart_position'    => 0,
+                    'cart_products_id' => ignore(),
+                    'carts_id'         => ignore(),
+                    'created'          => ignore(),
+                    'last_modified'    => ignore(),
+                    'quantity'         => 1,
+                    'sku'              => 'os28004-CAM-BLK'
+                }
+            ),
+            'carts_id'      => ignore(),
+            'created'       => ignore(),
+            'last_modified' => ignore(),
+            'name'          => 'main',
+            'sessions_id'   => undef,
+            'users_id'      => re(qr/\d/),
+        },
+        {
+            'cart_products' => [],
+            'carts_id'      => ignore(),
+            'created'       => ignore(),
+            'last_modified' => ignore(),
+            'name'          => 'main',
+            'sessions_id'   => re(qr/\w/),
+            'users_id'      => undef
+        }
+      ],
+      "carts contents are as we expect";
+
+    $mech->content_like( qr/cart_subtotal="0\.00/, 'cart_subtotal is 0.00' );
+
+    $mech->post_ok(
+        '/cart',
+        { sku => 'os28004', roller => 'camel', color => 'white' },
+        "POST /cart add Ergo Roller camel white"
+    );
+
+    $trap->read;
+    $mech->post_ok(
+        '/login',
+        {
+            username => 'customer1',
+            password => 'c1passwd'
+        },
+        "POST /login with good password"
+    ) or diag explain $trap->read;
+
+    cmp_ok $schema->resultset('Cart')->count, '==', 1, "1 cart in the db";
+
+    @carts = $schema->resultset('Cart')->search(
+        undef,
+        {
+            prefetch => 'cart_products',
+            order_by => 'me.carts_id'
+        }
+    )->hri->all;
+
+    cmp_deeply \@carts,
+      [
+        {
+            'cart_products' => bag(
+                {
+                    'cart_position'    => 0,
+                    'cart_products_id' => ignore(),
+                    'carts_id'         => ignore(),
+                    'created'          => ignore(),
+                    'last_modified'    => ignore(),
+                    'quantity'         => 3,
+                    'sku'              => 'os28004-CAM-WHT'
+                },
+                {
+                    'cart_position'    => 0,
+                    'cart_products_id' => ignore(),
+                    'carts_id'         => ignore(),
+                    'created'          => ignore(),
+                    'last_modified'    => ignore(),
+                    'quantity'         => 1,
+                    'sku'              => 'os28004-CAM-BLK'
+                }
+            ),
+            'carts_id'      => ignore(),
+            'created'       => ignore(),
+            'last_modified' => ignore(),
+            'name'          => 'main',
+            'sessions_id'   => re(qr/\w/),
+            'users_id'      => re(qr/\d/),
+        },
+      ],
+      "carts contents are as we expect";
+
+    $mech->get_ok( '/cart', "GET /cart" );
+
+    $mech->content_like(
+        qr/cart="os28004-CAM-BLK:Ergo Roller:1:.+,os28004-CAM-WHT:.+:3:16/,
+        'found qty 1 os28004-CAM-BLK and qty 3 os28004-CAM-WHT'
+    ) or diag $mech->content;
+
+    $mech->content_like( qr/cart_subtotal="64\.00/, 'cart_subtotal is 64.00' );
 
     # shop_redirect
     $mech->get( '/old-hand-tools', "GET /old-hand-tools" );
@@ -426,6 +577,7 @@ test 'route tests' => sub {
     lives_ok { $mech->get('/bad1')} "circular redirect";
 
     cmp_ok( $mech->status, 'eq', '404', 'status is not_found' );
+
 };
 
 1;
