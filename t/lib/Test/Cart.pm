@@ -305,6 +305,10 @@ test 'main cart tests' => sub {
 
     # Update product(s)
 
+    throws_ok { $cart->update( os28005 => "hill of beans" ) }
+    qr/Bad quantity argument to update: hill of beans/,
+      "Bad quantity argument to update";
+
     lives_ok { $cart->update( os28005 => 10 ) }
     "Change quantity of os28005 to 10";
     lives_ok { $cart->update( os28006 => 5 ) }
@@ -337,6 +341,10 @@ test 'main cart tests' => sub {
         "cart quantity after update of os28006 to 0." );
     cmp_ok( sprintf( "%.2f", $cart->total ),
         '==', 169.80, "cart total is 169.80" );
+
+    throws_ok { $cart->remove("NoSuchSkuInTheCart") }
+    qr/Product sku not found in cart: NoSuchSkuInTheCart/,
+      "Remove SKU that is not in the cart fails";
 
     lives_ok(
         sub {
@@ -536,6 +544,24 @@ test 'main cart tests' => sub {
 
     # calling load_saved_products with no logged in user
     ok ! defined $cart->load_saved_products, "load_saved_products";
+
+    # set_sessions_id
+
+    lives_ok {
+        $schema->resultset('Session')
+          ->create( { sessions_id => "sessionID", session_data => '' } )
+    }
+    "create a new session record for playing with cart";
+
+    $trap->read;
+    lives_ok { $cart->set_sessions_id("sessionID") } "set_sessions_id";
+
+    like $trap->read->[0]->{message},
+      qr/Change sessions_id of cart.+to: sessionID/,
+      "check set_sessions_id debug message";
+
+    cmp_ok $cart->dbic_cart->sessions_id, 'eq', 'sessionID',
+      "session ID updated in DB cart";
 };
 
 1;
