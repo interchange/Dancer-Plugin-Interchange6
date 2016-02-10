@@ -1,13 +1,17 @@
 package Test::Hooks;
 
-use Test::Exception;
-use Test::More;
 use Dancer qw/debug hook/;
 use Dancer::Plugin::Interchange6;
+use Test::Exception;
+use Test::Deep;
+use Test::More;
+
 use Test::Roo::Role;
 with 'Role::Mechanize';
 
 test 'before_cart_display hook' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
     my $mech = $self->mech;
 
@@ -29,6 +33,8 @@ test 'before_cart_display hook' => sub {
 };
 
 test 'before_checkout_display hook' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
     my $mech = $self->mech;
 
@@ -47,6 +53,8 @@ test 'before_checkout_display hook' => sub {
 };
 
 test 'before_login_display hook' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
     my $mech = $self->mech;
 
@@ -64,6 +72,8 @@ test 'before_login_display hook' => sub {
 };
 
 test 'before_navigation hooks' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
     my $mech = $self->mech;
 
@@ -96,6 +106,8 @@ test 'before_navigation hooks' => sub {
 };
 
 test 'before_product_display hook' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
     my $mech = $self->mech;
 
@@ -123,12 +135,13 @@ test 'cart_add hooks' => sub {
     lives_ok { shop_schema->resultset('Cart')->delete }
     "clear out any carts in the database";
 
-    lives_ok { $cart = shop_cart } "get cart";
+    lives_ok { $cart = shop_cart('test') } "get cart";
 
     lives_ok {
         hook before_cart_add_validate => sub {
             my ( $cart, $args ) = @_;
-            debug "hook before_cart_add_validate";
+            debug "hook before_cart_add_validate ",
+              join( " ", $cart->name, $cart->total, @$args );
         };
     }
     "add hook before_cart_add_validate";
@@ -136,7 +149,11 @@ test 'cart_add hooks' => sub {
     lives_ok {
         hook before_cart_add => sub {
             my ( $cart, $products ) = @_;
-            debug "hook before_cart_add";
+            debug "hook before_cart_add ",
+              join( " ",
+                $cart->name, $cart->total,
+                $products->[0]->{sku},
+                $products->[0]->{name} );
         };
     }
     "add hook before_cart_add";
@@ -144,13 +161,44 @@ test 'cart_add hooks' => sub {
     lives_ok {
         hook after_cart_add => sub {
             my ( $cart, $products ) = @_;
-            debug "hook after_cart_add";
+            debug "hook after_cart_add ",
+              join( " ",
+                $cart->name, $cart->total,
+                ref( $products->[0] ),
+                $products->[0]->sku,
+                $products->[0]->name );
         };
     }
     "add hook after_cart_add";
+
+    $self->trap->read;
+
+    lives_ok { $cart->add('os28005') } "add sku os28005";
+
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        [
+            {
+                level   => 'debug',
+                message => 'hook before_cart_add_validate test 0.00 os28005'
+            },
+            {
+                level   => 'debug',
+                message => 'hook before_cart_add test 0.00 os28005 Trim Brush'
+            },
+            {
+                level   => 'debug',
+                message => 'hook after_cart_add test 8.99 Interchange6::Cart::Product os28005 Trim Brush'
+            },
+        ],
+        "check debug logs"
+    ) or diag explain $logs;
 };
 
 test 'cart_update hooks' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_update
@@ -179,6 +227,8 @@ test 'cart_update hooks' => sub {
 };
 
 test 'cart_remove hooks' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_remove_validate
@@ -216,6 +266,8 @@ test 'cart_remove hooks' => sub {
 };
 
 test 'cart_rename hooks' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_rename
@@ -244,6 +296,8 @@ test 'cart_rename hooks' => sub {
 };
 
 test 'cart_clear hooks' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_clear
@@ -272,6 +326,8 @@ test 'cart_clear hooks' => sub {
 };
 
 test 'cart_set_users_id hooks' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_set_users_id
@@ -300,6 +356,8 @@ test 'cart_set_users_id hooks' => sub {
 };
 
 test 'cart_set_sessions_id hooks' => sub {
+
+    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_set_sessions_id

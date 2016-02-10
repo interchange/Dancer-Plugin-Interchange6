@@ -9,11 +9,10 @@ Role::Deploy
 use Test::Exception;
 use Test::More;
 
-use Dancer qw/set setting/;
+use Dancer qw/set setting var/;
 use Dancer::Factory::Hook ();
 use Dancer::Plugin::Interchange6;
 
-use namespace::clean;
 use Test::Roo::Role;
 
 =head1 ATTRIBUTES
@@ -63,7 +62,18 @@ has trap => (
     default => sub { Dancer::Logger::Capture->trap },
 );
 
+=head1 METHODS
+
+=head2 each_test
+
+After C<each_test> remove all DPIC6 hooks and carts and clear C<ic6_carts>
+var so it doesn't bite us.
+
+=cut
+
 after each_test => sub {
+    my $self = shift;
+
     my @hook_names = (
         'after_cart_add',              'after_cart_clear',
         'after_cart_remove',           'after_cart_rename',
@@ -80,6 +90,10 @@ after each_test => sub {
 
     my $hooks = Dancer::Factory::Hook->hooks;
     delete $hooks->{$_} for @hook_names;
+
+    $self->ic6s_schema->resultset('Cart')->delete;
+
+    var ic6_carts => undef;
 };
 
 test 'deploy tests' => sub {

@@ -2,9 +2,9 @@ package Test::Shop;
 
 use Test::Exception;
 use Test::More;
-use Test::Roo::Role;
-
 use Dancer::Plugin::Interchange6;
+
+use Test::Roo::Role;
 
 test 'misc shop tests' => sub {
     my $self = shift;

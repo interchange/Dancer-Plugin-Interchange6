@@ -9,7 +9,6 @@ use Dancer::Logger::Capture;
 use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::Interchange6::Cart;
 
-use namespace::clean;
 use Test::Roo::Role;
 
 test 'cart unit tests' => sub {

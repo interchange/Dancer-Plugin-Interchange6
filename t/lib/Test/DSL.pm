@@ -2,9 +2,9 @@ package Test::DSL;
 
 use Test::Exception;
 use Test::More;
-use Test::Roo::Role;
-
 use Dancer::Plugin::Interchange6;
+
+use Test::Roo::Role;
 
 test 'shop_schema' => sub {
 
