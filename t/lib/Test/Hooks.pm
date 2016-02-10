@@ -2,10 +2,10 @@ package Test::Hooks;
 
 use Test::Exception;
 use Test::More;
-use Test::Roo::Role;
-
 use Dancer qw/debug hook/;
 use Dancer::Plugin::Interchange6;
+use Test::Roo::Role;
+with 'Role::Mechanize';
 
 test 'before_cart_display hook' => sub {
     my $self = shift;
@@ -119,6 +119,9 @@ test 'cart_add hooks' => sub {
     # after_cart_add
 
     my $cart;
+
+    lives_ok { shop_schema->resultset('Cart')->delete }
+    "clear out any carts in the database";
 
     lives_ok { $cart = shop_cart } "get cart";
 
