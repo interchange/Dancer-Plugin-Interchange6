@@ -1,22 +1,9 @@
 package Test::Routes;
 
-# Dancer::Test uses some deep voodoo so please be very careful about changing
-# the order of the setup parts of these tests. Note that some settings
-# have to be set in config.yml in order to make them work but others we
-# have to set within this script.
-# IMPORTANT: these tests cannot live directly under 't' since Dancer merrily
-# trashes appdir under certain circumstances when we live there.
-
 use Test::More;
 use Test::Deep;
 use Test::Exception;
 
-use Dancer qw/config set/;
-use Dancer::Logger::Capture;
-use Dancer::Plugin::Interchange6;
-use Dancer::Plugin::Interchange6::Routes;
-
-use namespace::clean;
 use Test::Roo::Role;
 with 'Role::Mechanize';
 
@@ -29,12 +16,7 @@ test 'route tests' => sub {
 
     my ( $resp, $sessionid, %form, $log, @logs, $user, @carts );
 
-    my $schema = shop_schema;
-
-    set log    => 'debug';
-    set logger => 'capture';
-
-    my $trap = Dancer::Logger::Capture->trap;
+    my $schema = $self->ic6s_schema;
 
     # make sure there are no existing carts
     $schema->resultset('Cart')->delete_all;
@@ -46,7 +28,7 @@ test 'route tests' => sub {
 
     $mech->get_ok( '/os28005', "GET /os28005 (product route via sku)" );
 
-    $log = pop @{ $trap->read };
+    $log = pop @{ $self->trap->read };
     cmp_deeply(
         $log,
         {
@@ -202,7 +184,7 @@ test 'route tests' => sub {
 
     # bad login
 
-    $trap->read;    # clear logs
+    $self->trap->read;    # clear logs
 
     $mech->post_ok(
         '/login',
@@ -215,7 +197,7 @@ test 'route tests' => sub {
 
     $mech->content_like( qr/Login form/, 'got login page' );
 
-    $log = pop @{ $trap->read };
+    $log = pop @{ $self->trap->read };
     cmp_deeply(
         $log,
         { level => "debug", message => "Authentication failed for testuser" },
@@ -234,7 +216,7 @@ test 'route tests' => sub {
     );
     $mech->base_is( 'http://localhost/', "Redirected to /" );
 
-    my $logs = $trap->read;
+    my $logs = $self->trap->read;
     $log = pop @$logs;
     cmp_deeply(
         $log,
@@ -262,7 +244,7 @@ test 'route tests' => sub {
 
     # price modifiers
 
-    lives_ok( sub { $user = shop_user->find( { username => 'customer1' } ) },
+    lives_ok( sub { $user = $self->users->find( { username => 'customer1' } ) },
         "grab customer1 fom db" );
 
     cmp_ok( $user->roles->count, "==", 1, "user has 1 role" );
@@ -482,7 +464,7 @@ test 'route tests' => sub {
         "POST /cart add Ergo Roller camel white"
     );
 
-    $trap->read;
+    $self->trap->read;
     $mech->post_ok(
         '/login',
         {
@@ -490,7 +472,7 @@ test 'route tests' => sub {
             password => 'c1passwd'
         },
         "POST /login with good password"
-    ) or diag explain $trap->read;
+    ) or diag explain $self->trap->read;
 
     cmp_ok $schema->resultset('Cart')->count, '==', 1, "1 cart in the db";
 

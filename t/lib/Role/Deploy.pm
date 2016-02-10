@@ -1,5 +1,11 @@
 package Role::Deploy;
 
+=head1 NAME
+
+Role::Deploy
+
+=cut
+
 use Test::Exception;
 use Test::More;
 
@@ -8,6 +14,53 @@ use Dancer::Plugin::Interchange6;
 
 use namespace::clean;
 use Test::Roo::Role;
+
+=head1 ATTRIBUTES
+
+=head2 log
+
+L<Dancer::Config/log> - defaults to 'debug'
+
+=cut
+
+has log => (
+    is       => 'ro',
+    default  => sub { set log => 'debug'; 'debug' },
+    trigger  => 1,
+);
+
+sub _trigger_log {
+    my ( $self, $value ) = @_;
+    set log => $value;
+};
+
+=head2 logger
+
+L<Dancer::Config/logger> - defaults to 'capture'
+
+=cut
+
+has logger => (
+    is      => 'ro',
+    default  => sub { set logger => 'capture'; 'capture' },
+    trigger  => 1,
+);
+
+sub _trigger_logger {
+    my ( $self, $value ) = @_;
+    set logger => $value;
+};
+
+=head2 trap
+
+defaults to C<< Dancer::Logger::Capture->trap >>
+
+=cut
+
+has trap => (
+    is      => 'ro',
+    default => sub { Dancer::Logger::Capture->trap },
+);
 
 test 'deploy tests' => sub {
     my $self = shift;
