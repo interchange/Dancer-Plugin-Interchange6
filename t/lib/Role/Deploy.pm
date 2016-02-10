@@ -10,6 +10,7 @@ use Test::Exception;
 use Test::More;
 
 use Dancer qw/set setting/;
+use Dancer::Factory::Hook ();
 use Dancer::Plugin::Interchange6;
 
 use namespace::clean;
@@ -61,6 +62,25 @@ has trap => (
     is      => 'ro',
     default => sub { Dancer::Logger::Capture->trap },
 );
+
+after each_test => sub {
+    my @hook_names = (
+        'after_cart_add',              'after_cart_clear',
+        'after_cart_remove',           'after_cart_rename',
+        'after_cart_set_sessions_id',  'after_cart_set_users_id',
+        'after_cart_update',           'before_cart_add',
+        'before_cart_add_validate',    'before_cart_clear',
+        'before_cart_display',         'before_cart_remove',
+        'before_cart_remove_validate', 'before_cart_rename',
+        'before_cart_set_sessions_id', 'before_cart_set_users_id',
+        'before_cart_update',          'before_checkout_display',
+        'before_login_display',        'before_navigation_display',
+        'before_navigation_search',    'before_product_display',
+    );
+
+    my $hooks = Dancer::Factory::Hook->hooks;
+    delete $hooks->{$_} for @hook_names;
+};
 
 test 'deploy tests' => sub {
     my $self = shift;
