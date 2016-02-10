@@ -71,6 +71,10 @@ test 'deploy tests' => sub {
         default => {
             schema_class => $self->schema_class,
             connect_info => [ $self->connect_info ],
+        },
+        shop2 => {
+            schema_class => $self->schema_class,
+            connect_info => [ $self->connect_info ],
         }
     };
 

@@ -318,6 +318,8 @@ register shop_charge => sub {
 
 	$payment_settings = plugin_setting->{payment};
 
+    die "No payment setting" unless $payment_settings;
+
     # determine payment provider
     if (exists $args{provider} && $args{provider}) {
         $provider = $args{provider};
@@ -397,7 +399,8 @@ sub _shop_cart {
         # can't find this cart in stash
 
         $args{sessions_id} = session->id;
-        $args{execute_hook} = sub { execute_hook(@_) };
+        # FIXME: not sure what the following line is for
+        #$args{execute_hook} = sub { execute_hook(@_) };
 
         if ( $user_ref = logged_in_user ) {
 
