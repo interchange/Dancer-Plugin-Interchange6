@@ -411,7 +411,7 @@ Rename this cart. This is the writer method for L<Interchange6::Cart/name>.
 
 Arguments: new name
 
-Returns: cart object
+Returns: new name
 
 =cut
 
@@ -424,9 +424,9 @@ around rename => sub {
 
     my $ret = $orig->( $self, $new_name );
 
-    $self->dbic_cart->update( { name => $new_name } );
+    $self->dbic_cart->update( { name => $ret } );
 
-    execute_hook( 'after_cart_rename', $ret, $old_name, $new_name );
+    execute_hook( 'after_cart_rename', $self, $old_name, $ret );
 
     return $ret;
 };
@@ -526,7 +526,7 @@ around update => sub {
 
         execute_hook( 'before_cart_update', $self, $sku, $qty );
 
-        my $ret = $orig->( $self, $sku => $qty );
+        my ($ret) = $orig->( $self, $sku => $qty );
 
         $self->_find_and_update( $sku, { quantity => $qty } );
 
@@ -572,9 +572,9 @@ to L<Interchange6::Cart::Product/new>.
 
 Called in L</add> after products have been added to the cart.
 
-Receives: $cart, \@product
+Receives: $cart, \@products
 
-The products arrary ref contains <Interchange6::Cart::Product>s.
+The products arrary ref contains L<Interchange6::Cart::Product>s.
 
 =item before_cart_remove_validate
 
@@ -600,11 +600,22 @@ Executed for each pair of sku/quantity passed to L<update> before the update is 
 
 Receives: $cart, $sku, $quantity
 
+A quantity of zero is equivalent to removing this product,
+so in this case the remove hooks will be invoked instead
+of the update hooks.
+
 =item after_cart_update
 
 Executed for each pair of sku/quantity passed to L<update> after the update is performed.
 
-Receives: $cart, $sku, $quantity
+Receives: $product, $sku, $quantity
+
+Where C<$product> is the L<Interchange6::Cart::Product> returned from
+L<Interchange6::Cart::Product/update>.
+
+A quantity of zero is equivalent to removing this product,
+so in this case the remove hooks will be invoked instead
+of the update hooks.
 
 =item before_cart_clear
 
@@ -628,7 +639,7 @@ Receives: $cart, $userid
 
 Executed in L<set_users_id> after users_id is updated.
 
-Receives: $cart, $userid
+Receives: $new_usersid, $requested_userid
 
 =item before_cart_set_sessions_id
 
