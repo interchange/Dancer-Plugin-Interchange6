@@ -19,7 +19,8 @@ test 'route tests' => sub {
 
     my $schema = $self->ic6s_schema;
 
-    # make sure there are no existing carts
+    # make sure user is logged out and there are no existing carts
+    $self->mech->get_ok('/logout', "make sure we're logged out");
     $schema->resultset('Cart')->delete_all;
 
     $mech->get_ok( '/ergo-roller', "GET /ergo-roller (product route via uri)" );
