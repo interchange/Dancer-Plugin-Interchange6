@@ -4,7 +4,7 @@ use Test::More;
 use Test::Deep;
 use Test::Exception;
 
-use Dancer qw/debug hook set setting var/;
+use Dancer qw/debug set setting var/;
 use Dancer::Logger::Capture;
 use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::Interchange6::Cart;
@@ -16,8 +16,7 @@ test 'cart unit tests' => sub {
 
     my $self   = shift;
     my $schema = $self->ic6s_schema;
-    my $trap   = Dancer::Logger::Capture->trap;
-    $trap->read;
+    $self->trap->read;
 
     my ( $cart, $log );
 
@@ -26,7 +25,7 @@ test 'cart unit tests' => sub {
     lives_ok { $cart = Dancer::Plugin::Interchange6::Cart->new }
     "new cart with no args lives";
 
-    $log = $trap->read->[0];
+    $log = $self->trap->read->[0];
     cmp_deeply(
         $log,
         { level => "debug", message => re(qr/^New cart \d+ main\.$/) },
@@ -42,7 +41,7 @@ test 'cart unit tests' => sub {
     lives_ok { $cart = Dancer::Plugin::Interchange6::Cart->new }
     "repeat new cart with no args lives";
 
-    $log = $trap->read->[0];
+    $log = $self->trap->read->[0];
     cmp_deeply(
         $log,
         { level => "debug", message => re(qr/^Existing cart: \d+ main\.$/) },
@@ -61,7 +60,7 @@ test 'cart unit tests' => sub {
     }
     "new cart with database and name";
 
-    $log = $trap->read->[0];
+    $log = $self->trap->read->[0];
     cmp_deeply(
         $log,
         { level => "debug", message => re(qr/^New cart \d+ new\.$/) },
@@ -81,7 +80,7 @@ test 'cart unit tests' => sub {
     }
     "new cart with database, name and sessions_id (undef) hashref";
 
-    $log = $trap->read->[0];
+    $log = $self->trap->read->[0];
     cmp_deeply(
         $log,
         { level => "debug", message => re(qr/^New cart \d+ hashref\.$/) },
@@ -133,15 +132,13 @@ test 'main cart tests' => sub {
     set log    => 'debug';
     set logger => 'capture';
 
-    my $trap   = Dancer::Logger::Capture->trap;
-
     # Get / set cart name
     $cart = cart;
 
     cmp_ok( $schema->resultset('Cart')->count,
         '==', 1, "1 cart in the database" );
 
-    $log = pop @{$trap->read};
+    $log = pop @{$self->trap->read};
     cmp_deeply(
         $log,
         { level => "debug", message => re(qr/^New cart \d+ main\.$/) },
@@ -161,7 +158,7 @@ test 'main cart tests' => sub {
     $name = $cart->name;
     ok( $name eq 'new', "Testing cart name." );
 
-    $log = pop @{$trap->read};
+    $log = pop @{$self->trap->read};
     cmp_deeply(
         $log,
         { level => "debug", message => re(qr/^New cart \d+ new\.$/) },
@@ -345,104 +342,6 @@ test 'main cart tests' => sub {
     qr/Product sku not found in cart: NoSuchSkuInTheCart/,
       "Remove SKU that is not in the cart fails";
 
-    lives_ok(
-        sub {
-            hook before_cart_remove => sub {
-                my ( $cart, $sku ) = @_;
-
-                if ( $sku eq 'os28005' ) {
-                    die 'Product not removed due to hook.';
-                }
-              }
-        },
-        "Add before_cart_remove hook"
-    );
-
-    throws_ok { $cart->remove('os28005') }
-        qr/Product not removed due to hook/,
-        "fail to remove product os28005 using remove due to hook"
-    ;
-
-    throws_ok(
-        sub { $cart->update(os28005 => 0) },
-        qr/Product not removed due to hook/,
-        "fail to remove product os28005 using update due to hook"
-    );
-
-    cmp_ok( $cart->count, '==', 1, "cart count is still 1" );
-    cmp_ok( $cart->quantity, '==', 20, "cart quantity is still 20" );
-    cmp_ok( sprintf( "%.2f", $cart->total ),
-        '==', 169.80, "cart total is still 169.80" );
-
-    # Hooks
-
-    lives_ok {
-        hook 'before_cart_add' => sub {
-            my ( $cart, $products ) = @_;
-            foreach my $product (@$products) {
-                if ( $product->{sku} eq 'os28007' ) {
-                    die 'Test error';
-                }
-            }
-        }
-    }
-    "hook to prevent add of sku os28007";
-
-    lives_ok { $cart->clear } "Clear cart";
-    cmp_ok( $cart->count, '==', 0, "cart count is 0" );
-    cmp_ok( $cart->quantity, '==', 0, "cart quantity is 0" );
-    cmp_ok( $cart->subtotal, '==', 0, "cart subtotal is 0" );
-    cmp_ok( $cart->total, '==', 0, "cart total is 0" );
-
-    throws_ok( sub { $ret = $cart->add('os28007') },
-        qr/Test error/, "fail add product with sku os28007 due to hook" );
-
-    cmp_ok( $cart->count, '==', 0, "cart is still empty" );
-
-    lives_ok {
-        hook 'before_cart_add' => sub {
-            my ( $cart, $products ) = @_;
-            foreach my $product (@$products) {
-                if ( $product->{price} > 20 ) {
-                    die 'Test error';
-                }
-            }
-        }
-    }
-    "hook to prevent add of product with price > 20";
-
-    lives_ok {
-        hook 'before_cart_add' => sub {
-            my ( $cart, $products ) = @_;
-            debug "added to cart id "
-              . $cart->id
-              . " these skus: "
-              . join( ", ", map { $_->{sku} } @$products );
-        }
-    }
-    "hook to debug log skus of added products";
-
-    throws_ok( sub { $ret = $cart->add('os28062') },
-        qr/Test error/, "fail add product with sku os28062 due to price hook" );
-    cmp_ok( $cart->count, '==', 0, "cart count is 0" );
-
-    $log = pop @{$trap->read};
-    ok( !defined $log, "nothing in the logs" ) or diag explain $log;
-
-    lives_ok( sub { $ret = $cart->add('os28064') },
-        "add product with sku os28064 not prevented by price hook" );
-    cmp_ok( $cart->count, '==', 1, "cart count is 1" );
-
-    $log = pop @{$trap->read};
-    cmp_deeply(
-        $log,
-        {
-            level   => "debug",
-            message => re(qr/^added to cart id \d+ these skus: os28064$/)
-        },
-        "debug message from hook found in logs"
-    ) or diag explain $log;
-
     # Seed
 
     lives_ok( sub { var ic6_carts => undef },
@@ -450,7 +349,7 @@ test 'main cart tests' => sub {
 
     lives_ok { $cart = cart } "Create a new cart";
 
-    $log = $trap->read;
+    $log = $self->trap->read;
     cmp_deeply(
         $log,
         [
@@ -508,11 +407,11 @@ test 'main cart tests' => sub {
     
     setting('plugins')->{Interchange6}->{carts_var_name} = "foobar";
 
-    $trap->read;
+    $self->trap->read;
 
     lives_ok { $cart = cart } "Create a new cart";
 
-    $log = $trap->read;
+    $log = $self->trap->read;
     cmp_deeply(
         $log,
         [
@@ -552,10 +451,10 @@ test 'main cart tests' => sub {
     }
     "create a new session record for playing with cart";
 
-    $trap->read;
+    $self->trap->read;
     lives_ok { $cart->set_sessions_id("sessionID") } "set_sessions_id";
 
-    like $trap->read->[0]->{message},
+    like $self->trap->read->[0]->{message},
       qr/Change sessions_id of cart.+to: sessionID/,
       "check set_sessions_id debug message";
 
