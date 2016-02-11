@@ -33,12 +33,15 @@ get '/sessionid' => sub {
 };
 
 post '/rename_cart' => sub {
-    my $newname = param('name');
-    shop_cart->rename($newname);
+    shop_cart->rename( param('name') );
 };
 
 get '/clear_cart' => sub {
     shop_cart->clear;
+};
+
+post '/set_cart_sessions_id' => sub {
+    shop_cart->set_sessions_id( param('id') );
 };
 
 shop_setup_routes;
@@ -254,11 +257,8 @@ hook before_cart_set_users_id => sub {
 };
 
 hook after_cart_set_users_id => sub {
-    my ( $ret, $users_id ) = @_;
 
-    debug join( " ",
-        "hook after_cart_set_users_id",
-        $ret, $users_id );
+    debug join( " ", "hook after_cart_set_users_id", @_);
 };
 
 hook before_cart_set_sessions_id => sub {
@@ -272,13 +272,8 @@ hook before_cart_set_sessions_id => sub {
 };
 
 hook after_cart_set_sessions_id => sub {
-    my ( $cart, $sessions_id ) = @_;
 
-    debug join( " ",
-        "hook after_cart_set_sessions_id",
-        $cart->name, $cart->total,
-        $cart->sessions_id || 'undef',
-        $sessions_id || 'undef' );
+    debug join( " ", "hook after_cart_set_sessions_id", @_ );
 };
 
 1;

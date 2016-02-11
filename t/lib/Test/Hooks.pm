@@ -354,16 +354,42 @@ test 'cart_set_users_id hooks' => sub {
 };
 
 test 'cart_set_sessions_id hooks' => sub {
-
-    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_set_sessions_id
     # after_cart_set_sessions_id
 
-    my $cart;
+    my $result;
+    lives_ok {
+        $result = $self->ic6s_schema->resultset('Session')
+          ->create( { sessions_id => 'specialsessionid', session_data => '' } )
+    }
+    "create a new session result row";
 
-    ok(1);
+    my $id = $result->id;
+
+    $self->mech->post_ok(
+        '/set_cart_sessions_id',
+        { id => $id },
+        "POST /set_cart_sessions_id"
+    ) or diag explain $self->trap->read;
+
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level => 'debug',
+                message =>
+                  re(qr/hook before_cart_set_sessions_id main 8.99 \w+ $id/),
+            },
+            {
+                level   => 'debug',
+                message => "hook after_cart_set_sessions_id $id $id",
+            },
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
 
 };
 
