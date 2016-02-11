@@ -54,7 +54,7 @@ sub cart_route {
                 push @errors, "Failed to remove product from cart: $_";
             };
         }
-        elsif ( param('update') && param('quantity') ) {
+        elsif ( param('update') && defined param('quantity') ) {
 
             # update existing cart product
 
