@@ -35,7 +35,10 @@ get '/sessionid' => sub {
 post '/rename_cart' => sub {
     my $newname = param('name');
     shop_cart->rename($newname);
-    return $newname;
+};
+
+get '/clear_cart' => sub {
+    shop_cart->clear;
 };
 
 shop_setup_routes;

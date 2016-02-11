@@ -264,19 +264,48 @@ test 'cart_rename hooks' => sub {
         "check debug logs"
     ) or diag explain $logs;
 
+    $self->mech->post_ok(
+        '/rename_cart',
+        { name => 'name' },
+        "POST /rename_cart back to 'main'"
+    ) or diag explain $self->trap->read;
+
 };
 
 test 'cart_clear hooks' => sub {
-
-    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_clear
     # after_cart_clear
 
-    my $cart;
+    $self->mech->post_ok(
+        '/cart',
+        { sku => 'os28005' },
+        "POST /cart add os28005"
+    );
 
-    ok(1);
+    $self->trap->read;
+
+    $self->mech->get_ok(
+        '/clear_cart',
+        "GET /clear_cart"
+    );
+
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level   => 'debug',
+                message => 'hook before_cart_clear main 8.99',
+            },
+            {
+                level   => 'debug',
+                message => 'hook after_cart_clear main 0.00',
+            },
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
 
 };
 
