@@ -6,50 +6,41 @@ Role::Deploy
 
 =cut
 
+BEGIN {
+    use Cwd;
+    $ENV{DANCER_APPDIR} = Cwd::abs_path('t');
+}
+
 use Test::Exception;
 use Test::More;
+use Test::WWW::Mechanize::PSGI;
 
-use Dancer qw/set setting var/;
-use Dancer::Factory::Hook ();
-use Dancer::Plugin::Interchange6;
+use Dancer qw/load_app set setting/;
 
 use Test::Roo::Role;
 
 =head1 ATTRIBUTES
 
-=head2 log
+=head2 mech
 
-L<Dancer::Config/log> - defaults to 'debug'
-
-=cut
-
-has log => (
-    is       => 'ro',
-    default  => sub { set log => 'debug'; 'debug' },
-    trigger  => 1,
-);
-
-sub _trigger_log {
-    my ( $self, $value ) = @_;
-    set log => $value;
-};
-
-=head2 logger
-
-L<Dancer::Config/logger> - defaults to 'capture'
+An instance of L<Test::WWW::Mechanize::PSGI> connected to the C<TestApp>.
 
 =cut
 
-has logger => (
+has mech => (
     is      => 'ro',
-    default  => sub { set logger => 'capture'; 'capture' },
-    trigger  => 1,
+    default => sub {
+        Test::WWW::Mechanize::PSGI->new(
+            app => sub {
+                my $env = shift;
+                require Dancer;
+                load_app 'TestApp';
+                my $request = Dancer::Request->new( env => $env );
+                Dancer->dance($request);
+            }
+        );
+    },
 );
-
-sub _trigger_logger {
-    my ( $self, $value ) = @_;
-    set logger => $value;
-};
 
 =head2 trap
 
@@ -58,43 +49,10 @@ defaults to C<< Dancer::Logger::Capture->trap >>
 =cut
 
 has trap => (
-    is      => 'ro',
-    default => sub { Dancer::Logger::Capture->trap },
+    is => 'ro',
+    default =>
+      sub { require Dancer::Logger::Capture; Dancer::Logger::Capture->trap },
 );
-
-=head1 METHODS
-
-=head2 each_test
-
-After C<each_test> remove all DPIC6 hooks and carts and clear C<ic6_carts>
-var so it doesn't bite us.
-
-=cut
-
-after each_test => sub {
-    my $self = shift;
-
-    my @hook_names = (
-        'after_cart_add',              'after_cart_clear',
-        'after_cart_remove',           'after_cart_rename',
-        'after_cart_set_sessions_id',  'after_cart_set_users_id',
-        'after_cart_update',           'before_cart_add',
-        'before_cart_add_validate',    'before_cart_clear',
-        'before_cart_display',         'before_cart_remove',
-        'before_cart_remove_validate', 'before_cart_rename',
-        'before_cart_set_sessions_id', 'before_cart_set_users_id',
-        'before_cart_update',          'before_checkout_display',
-        'before_login_display',        'before_navigation_display',
-        'before_navigation_search',    'before_product_display',
-    );
-
-    my $hooks = Dancer::Factory::Hook->hooks;
-    delete $hooks->{$_} for @hook_names;
-
-    $self->ic6s_schema->resultset('Cart')->delete;
-
-    var ic6_carts => undef;
-};
 
 test 'deploy tests' => sub {
     my $self = shift;
@@ -111,8 +69,7 @@ test 'deploy tests' => sub {
             connect_info => [ $self->connect_info ],
         }
     };
-
-    my $schema = shop_schema;
+    my $schema = $self->ic6s_schema;
 
     set session => 'DBIC';
     set session_options => { schema => $schema, };

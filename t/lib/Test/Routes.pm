@@ -1,20 +1,21 @@
 package Test::Routes;
 
+use Cwd;
+use File::Spec;
+use Dancer qw/:syntax !pass/;
 use Test::More;
 use Test::Deep;
 use Test::Exception;
 
 use Test::Roo::Role;
-with 'Role::Mechanize';
 
 test 'route tests' => sub {
     my $self = shift;
-
     my $mech = $self->mech;
 
     diag "Test::Routes";
 
-    my ( $resp, $sessionid, %form, $log, @logs, $user, @carts );
+    my ( $resp, $sessionid, %form, $log, $user, @carts );
 
     my $schema = $self->ic6s_schema;
 
@@ -28,16 +29,17 @@ test 'route tests' => sub {
 
     $mech->get_ok( '/os28005', "GET /os28005 (product route via sku)" );
 
-    $log = pop @{ $self->trap->read };
+    $log = $self->trap->read;
     cmp_deeply(
         $log,
-        {
-            level => "debug",
-            message =>
-              "Redirecting permanently to product uri trim-brush for os28005."
-        },
+        superbagof(
+            {
+                level => "debug",
+                message => "Redirecting permanently to product uri trim-brush for os28005."
+            }
+        ),
         "Check 'Redirecting permanently...' debug message"
-    ) || diag explain $log;
+    ) or diag explain $log;
 
     $mech->base_is( 'http://localhost/trim-brush', "Check redirect path" );
 
@@ -197,12 +199,17 @@ test 'route tests' => sub {
 
     $mech->content_like( qr/Login form/, 'got login page' );
 
-    $log = pop @{ $self->trap->read };
+    $log = $self->trap->read;
     cmp_deeply(
         $log,
-        { level => "debug", message => "Authentication failed for testuser" },
+        superbagof(
+            {
+                level   => "debug",
+                message => "Authentication failed for testuser"
+            }
+        ),
         "Check auth failed debug message"
-    ) || diag explain $log;
+    ) or diag explain $log;
 
     # good login
 
@@ -216,20 +223,15 @@ test 'route tests' => sub {
     );
     $mech->base_is( 'http://localhost/', "Redirected to /" );
 
-    my $logs = $self->trap->read;
-    $log = pop @$logs;
+    $log = $self->trap->read;
     cmp_deeply(
         $log,
-        { level => "debug", message => re('Change users_id') },
-        "users_id set in debug logs"
-    ) || diag explain $log;
-
-    $log = pop @$logs;
-    cmp_deeply(
-        $log,
-        { level => "debug", message => "users accepted user customer1" },
-        "login successful in debug logs"
-    ) || diag explain $log;
+        superbagof(
+            { level => "debug", message => re('Change users_id') },
+            { level => "debug", message => "users accepted user customer1" },
+        ),
+        "users_id set in debug logs and login successful"
+    ) or diag explain $log;
 
     $mech->get_ok( '/sessionid', "GET /sessionid" );
 
@@ -305,7 +307,8 @@ test 'route tests' => sub {
 
     $mech->content_like(
         qr/cart=".+:Ergo Roller:2:16.+,os28004-CAM-WHT:.+:1:16/,
-        'found 2 ergo roller variants at checkout' ) or diag $mech->content;
+        'found 2 ergo roller variants at checkout' )
+      or diag $mech->content;
 
     @carts = $schema->resultset('Cart')->hri->all;
     cmp_ok @carts, '==', 1, "1 cart in the database";
@@ -556,7 +559,7 @@ test 'route tests' => sub {
 
     $mech->base_is( 'http://localhost/hand-tools', 'redirect is ok' );
 
-    lives_ok { $mech->get('/bad1')} "circular redirect";
+    lives_ok { $mech->get('/bad1') } "circular redirect";
 
     cmp_ok( $mech->status, 'eq', '404', 'status is not_found' );
 

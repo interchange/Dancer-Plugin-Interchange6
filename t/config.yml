@@ -1,6 +1,6 @@
-log: core
+log: debug
 logger: capture
-show_errors: 1
+show_errors: 0
 template: simple
 plugins:
   Auth::Extensible:
