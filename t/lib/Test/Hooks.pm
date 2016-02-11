@@ -310,16 +310,46 @@ test 'cart_clear hooks' => sub {
 };
 
 test 'cart_set_users_id hooks' => sub {
-
-    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_set_users_id
     # after_cart_set_users_id
 
-    my $cart;
+    $self->mech->get_ok('/logout', "make sure we're not logged in");
 
-    ok(1);
+    $self->mech->post_ok(
+        '/cart',
+        { sku => 'os28005' },
+        "POST /cart add os28005"
+    );
+
+    $self->trap->read;
+
+    $self->mech->post_ok(
+        '/login',
+        {
+            username => 'customer1',
+            password => 'c1passwd'
+        },
+        "POST /login with good password"
+    );
+
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level => 'debug',
+                message =>
+                  re(qr/hook before_cart_set_users_id main 8.99 undef \d+/),
+            },
+            {
+                level   => 'debug',
+                message => re(qr/hook after_cart_set_users_id \d+ \d+/),
+            },
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
 
 };
 
