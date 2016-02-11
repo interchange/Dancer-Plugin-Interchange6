@@ -136,46 +136,133 @@ test 'cart_add hooks' => sub {
 };
 
 test 'cart_update hooks' => sub {
-
-    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_update
     # after_cart_update
 
-    my $cart;
+    $self->mech->post_ok(
+        '/cart',
+        { update => 'os28005', quantity => 3 },
+        "POST /cart update os28005 quantity 3"
+    );
 
-    ok(1);
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level   => 'debug',
+                message => 'hook before_cart_update main 8.99 os28005 3'
+            },
+            {
+                level   => 'debug',
+                message => 'hook after_cart_update os28005 3 os28005 3'
+            },
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
 
+    # remove with qty 0 and we end up with different hooks
+
+    $self->mech->post_ok(
+        '/cart',
+        { update => 'os28005', quantity => 0 },
+        "POST /cart update os28005 quantity 0"
+    );
+
+    $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level   => 'debug',
+                message => 'hook before_cart_remove_validate main 26.97 os28005'
+            },
+            {
+                level   => 'debug',
+                message => 'hook before_cart_remove main 26.97 os28005'
+            },
+            {
+                level   => 'debug',
+                message => 'hook after_cart_remove main 0.00 os28005'
+            },
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
 
 };
 
 test 'cart_remove hooks' => sub {
-
-    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_remove_validate
     # before_cart_remove
     # after_cart_remove
 
-    my $cart;
+    $self->mech->post_ok(
+        '/cart',
+        { sku => 'os28005' },
+        "POST /cart add os28005"
+    );
 
-    ok(1);
+    $self->trap->read;
+
+    $self->mech->post_ok(
+        '/cart',
+        { remove => 'os28005' },
+        "POST /cart remove os28005"
+    );
+
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level   => 'debug',
+                message => 'hook before_cart_remove_validate main 8.99 os28005'
+            },
+            {
+                level   => 'debug',
+                message => 'hook before_cart_remove main 8.99 os28005'
+            },
+            {
+                level   => 'debug',
+                message => 'hook after_cart_remove main 0.00 os28005'
+            },
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
 
 };
 
 test 'cart_rename hooks' => sub {
-
-    # FIXME: more tests needed
     my $self = shift;
 
     # before_cart_rename
     # after_cart_rename
 
-    my $cart;
+    $self->mech->post_ok(
+        '/rename_cart',
+        { name => 'crazy' },
+        "POST /rename_cart name => crazy"
+    ) or diag explain $self->trap->read;
 
-    ok(1);
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level   => 'debug',
+                message => 'hook before_cart_rename main main crazy',
+            },
+            {
+                level   => 'debug',
+                message => 'hook after_cart_rename crazy main crazy',
+            },
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
 
 };
 
