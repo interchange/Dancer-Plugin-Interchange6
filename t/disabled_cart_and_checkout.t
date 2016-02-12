@@ -1,3 +1,4 @@
+use lib 't/lib';
 use Test::More import => ['!pass'], tests => 2;
 use Test::WWW::Mechanize::PSGI;
 use Dancer;
@@ -27,8 +28,8 @@ set session => 'DBIC';
 set session_options => { schema => $schema, };
 
 set logger   => 'console';
-set log      => 'warn';
-set template => 'template_toolkit';    # for coverage testing only
+set log      => 'error';
+set template => 'template_flute';    # for coverage testing only
 setting('plugins')->{'Interchange6::Routes'} = {
     cart     => { active => 0 },
     checkout => { active => 0 },
