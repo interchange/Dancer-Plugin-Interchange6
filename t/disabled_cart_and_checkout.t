@@ -1,9 +1,21 @@
 use lib 't/lib';
-use Test::More import => ['!pass'], tests => 2;
+use Test::More import => ['!pass'], tests => 3;
 use Test::WWW::Mechanize::PSGI;
 use Dancer;
 use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::Interchange6::Routes;
+
+{
+    package Fixtures;
+    use Moo;
+    with 'Interchange6::Test::Role::Fixtures';
+
+    has ic6s_schema => (
+        is => 'ro',
+    );
+
+    1;
+}
 
 setting('plugins')->{DBIC} = {
     default => {
@@ -24,16 +36,23 @@ setting('plugins')->{DBIC} = {
 my $schema = shop_schema;
 $schema->deploy;
 
+my $fixtures = Fixtures->new( ic6s_schema => $schema );
+$fixtures->navigation;
+
 set session => 'DBIC';
 set session_options => { schema => $schema, };
 
-set logger   => 'console';
+set logger   => 'capture';
 set log      => 'error';
 set template => 'template_flute';    # for coverage testing only
 setting('plugins')->{'Interchange6::Routes'} = {
-    cart     => { active => 0 },
-    checkout => { active => 0 },
+    cart     => { active  => 0 },
+    checkout => { active  => 0 },
 };
+
+# we want navigation->records to be undef
+my $settings = setting('plugins');
+delete $settings->{'Interchange6::Routes'}->{navigation};
 
 my $app = sub {
     my $env = shift;
@@ -58,3 +77,16 @@ subtest "checkout route not defined" => sub {
     ok $mech->status eq '404', "/checkout not found" or diag $mech->status;
 };
 
+subtest "navigation with undef records" => sub {
+
+    my $trap = Dancer::Logger::Capture->trap;
+
+    $trap->read;
+    $mech->get('/hand-tools');
+
+    ok $mech->status eq '500', "/hand-tools crashed" or diag $mech->status;
+
+    cmp_ok $trap->read->[0]->{message}, 'eq',
+      'Supplied view (category) not found -  does not exist',
+      "got view not found error (as expected)";
+};
