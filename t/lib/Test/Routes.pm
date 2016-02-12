@@ -72,6 +72,27 @@ test 'route tests' => sub {
 
     # cart
 
+    $self->trap->read;
+
+    $mech->get_ok( '/cart?cart=foobar', "GET /cart?cart=foobar" );
+
+    $log = $self->trap->read;
+    cmp_deeply(
+        $log,
+        superbagof(
+            {
+                level => "debug",
+                message => "cart_route cart name: foobar",
+            }
+        ),
+        "check debug logs for cart name"
+    ) or diag explain $log;
+
+    lives_ok {
+        $schema->resultset('Cart')->search( { name => 'foobar' } )->delete_all
+    }
+    "remove foobar cart from database";
+
     $mech->get_ok( '/cart', "GET /cart" );
 
     # try to add canonical product which has variants to cart

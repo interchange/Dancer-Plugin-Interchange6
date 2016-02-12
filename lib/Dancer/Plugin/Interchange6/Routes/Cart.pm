@@ -31,12 +31,8 @@ sub cart_route {
         my ($input, $product, $cart, $cart_name, $cart_input,
             $cart_product, $roles, @errors);
 
-        if ($cart_name = param('cart') && scalar($cart_name)) {
-            $cart = cart($cart_name);
-        }
-        else {
-            $cart = cart;
-        }
+        $cart_name = param('cart');
+        $cart = $cart_name && ref($cart_name) eq '' ? cart($cart_name) : cart;
 
         debug "cart_route cart name: " . $cart->name;
 
