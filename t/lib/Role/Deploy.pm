@@ -33,7 +33,6 @@ has mech => (
         Test::WWW::Mechanize::PSGI->new(
             app => sub {
                 my $env = shift;
-                require Dancer;
                 load_app 'TestApp';
                 my $request = Dancer::Request->new( env => $env );
                 Dancer->dance($request);

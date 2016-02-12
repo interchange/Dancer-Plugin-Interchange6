@@ -392,7 +392,7 @@ sub _shop_cart {
       || 'Dancer::Plugin::Interchange6::Cart';
     load_class $cart_class;
 
-    my $carts = var $var // {};
+    my $carts = var $var || {};
 
     if ( !defined $carts->{ $args{name} } ) {
 

@@ -22,6 +22,7 @@ t/lib/Test/DSL.pm
 t/lib/Test/Hooks.pm
 t/lib/Test/Routes.pm
 t/lib/Test/Shop.pm
+t/disabled_cart_and_checkout.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
