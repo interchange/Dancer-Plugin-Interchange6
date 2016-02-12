@@ -414,7 +414,7 @@ sub _config_warnings {
     my ($settings) = @_;
 
     if ($settings->{navigation}->{records} == 0) {
-        warn __PACKAGE__, ": Maximum number of navigation records is zero.\n";
+        warning __PACKAGE__, ": Maximum number of navigation records is zero.\n";
     }
 }
 
