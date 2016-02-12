@@ -58,42 +58,109 @@ test 'before_checkout_display hook' => sub {
                 message => 'hook before_checkout_display 1 27.98 27.98'
             }
         ),
-        "before_cart_display hook fired"
+        "check debug logs"
     ) or diag explain $logs;
 };
 
 test 'before_login_display hook' => sub {
-
-    # FIXME: more tests needed
     my $self = shift;
-    my $mech = $self->mech;
 
     # before_login_display
 
-    ok(1);
+    $self->mech->get_ok('/logout', "make sure user is logged out");
+
+    $self->trap->read;
+
+    $self->mech->get_ok( '/login?return_url=/there',
+        'GET /login?return_url=/there' );
+
+    $self->mech->base_is( 'http://localhost/login?return_url=/there',
+        "check we're on the /login page" );
+
+    $self->mech->content_like( qr/^Test Login form/,
+        'and we have the correct page content' );
+
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level   => 'debug',
+                message => 'hook before_login_display none /there'
+            }
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
+
+    $self->mech->post_ok(
+        '/login',
+        { username => "badbad", password => "evenworse" },
+        'POST /login with bad user/pass'
+    ) or diag explain $self->trap->read;
+
+    $self->mech->base_is( 'http://localhost/login',
+        "check we're on the /login page" );
+
+    $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level   => 'debug',
+                message => 'hook before_login_display Login failed none'
+            }
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
+
 };
 
 test 'before_navigation hooks' => sub {
-
-    # FIXME: more tests needed
     my $self = shift;
-    my $mech = $self->mech;
 
     # before_navigation_search
     # before_navigation_display
 
-    ok(1);
+    $self->mech->get_ok( '/hand-tools', "GET /hand-tools" )
+      or diag explain $self->trap->read;
+
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level => 'debug',
+                message =>
+                  'hook before_navigation_search Hand Tools 1 category',
+            },
+            {
+                level => 'debug',
+                message =>
+                  'hook before_navigation_display Hand Tools 1 2 10 category',
+            }
+        ),
+        "check debug logs"
+   ) or diag explain $logs;
 };
 
 test 'before_product_display hook' => sub {
-
-    # FIXME: more tests needed
     my $self = shift;
-    my $mech = $self->mech;
 
-    # before_product_display
+    $self->mech->get_ok( '/ergo-roller', "GET /ergo-roller" )
+      or diag explain $self->trap->read;
 
-    ok(1);
+    my $logs = $self->trap->read;
+    cmp_deeply(
+        $logs,
+        superbagof(
+            {
+                level => 'debug',
+                message =>
+                  re(qr/hook before_product_display os28004 Ergo Roller 21.99/)
+            },
+        ),
+        "check debug logs"
+    ) or diag explain $logs;
 };
 
 test 'cart_add hooks' => sub {

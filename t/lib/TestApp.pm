@@ -16,10 +16,6 @@ get '/' => sub {
     return 'Home page';
 };
 
-get '/login' => sub {
-    return "Login form";
-};
-
 get '/login/denied' => sub {
     return 'Denied';
 };

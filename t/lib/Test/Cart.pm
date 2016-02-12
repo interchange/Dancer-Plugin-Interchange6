@@ -4,8 +4,7 @@ use Test::More;
 use Test::Deep;
 use Test::Exception;
 
-use Dancer qw/debug set setting var/;
-use Dancer::Logger::Capture;
+use Dancer qw/setting var/;
 use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::Interchange6::Cart;
 
@@ -128,9 +127,6 @@ test 'main cart tests' => sub {
     my ( $cart, $cart_id, $product, $name, $ret, @products, $time, $log );
 
     my $schema = shop_schema;
-
-    set log    => 'debug';
-    set logger => 'capture';
 
     # Get / set cart name
     $cart = cart;
