@@ -61,6 +61,15 @@ test 'route tests' => sub {
 
     $mech->content_like( qr|products=".*Brush Set|, 'found Brush Set' );
 
+    # nav including page number
+
+    $mech->get_ok( '/hand-tools/2', "GET /hand-tools/2 (page 2)" );
+
+    $mech->content_like( qr|name="Hand Tools"|, 'found Hand Tools' );
+
+    $mech->content_like( qr|products="([^,]+,){6}[^,]+"|, 'found 7 products' )
+      or diag $mech->content;
+
     # cart
 
     $mech->get_ok( '/cart', "GET /cart" );
@@ -563,6 +572,28 @@ test 'route tests' => sub {
     lives_ok { $mech->get('/bad1') } "circular redirect";
 
     cmp_ok( $mech->status, 'eq', '404', 'status is not_found' );
+
+    # get product using sku
+
+    $mech->get_ok( '/os28004', 'GET /os28004' );
+
+    $mech->base_is( 'http://localhost/ergo-roller',
+        'redirected to /ergo-roller' );
+
+    # inactive product
+
+    lives_ok {$self->ic6s_schema->resultset('Product')->find('os28004')
+      ->update( { active => 0 } ) } "set os28004 to inactive";
+
+    $mech->get( '/os28004' );
+
+    ok $mech->status eq '404', "os28004 is now 404 not found"
+      or diag $mech->status;
+
+    lives_ok {$self->ic6s_schema->resultset('Product')->find('os28004')
+      ->update( { active => 1 } ) } "set os28004 to active again";
+
+    $mech->get_ok( '/os28004', 'GET /os28004' );
 
 };
 
