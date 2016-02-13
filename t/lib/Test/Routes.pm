@@ -206,7 +206,6 @@ test 'route tests' => sub {
         ),
         "check debug logs for cart remove"
     ) or diag explain $log;
-    
 
     # update with no quantity
     $mech->post_ok(
@@ -215,7 +214,25 @@ test 'route tests' => sub {
         "POST /cart update os28004-HUM-BLK with no quantity"
     );
 
-    $mech->content_like( qr/cart_total="48/, 'cart_total is 48.00' );
+    # update product not in the cart
+    $self->trap->read;
+    $mech->post_ok(
+        '/cart',
+        { update => 'definitelynotinthecart', quantity => 1 },
+        "POST /cart update product that is not in the cart"
+    );
+    
+    $log = $self->trap->read;
+    cmp_deeply(
+        $log,
+        superbagof(
+            {
+                level => "warning",
+                message => re(qr/^Update cart product error/),
+            }
+        ),
+        "check debug logs for cart remove"
+    ) or diag explain $log;
 
     # GET /cart
     $mech->get_ok( '/cart', "GET /cart" );
