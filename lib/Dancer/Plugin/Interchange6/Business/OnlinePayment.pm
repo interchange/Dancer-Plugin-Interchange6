@@ -188,7 +188,7 @@ sub charge {
 	}
 	else {
 	    debug( 'Card was rejected by ', $self->provider, ': ' , $bop_object->error_message );
-	    $self->_set_error_code($bop_object->result_code);
+	    $self->_set_error_code($bop_object->failure_status);
 	    $self->_set_error_message($bop_object->error_message);
         return;
 	}

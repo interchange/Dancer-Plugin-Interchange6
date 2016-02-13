@@ -14,6 +14,9 @@ MANIFEST.SKIP
 README
 t/00-load.t
 t/config.yml
+t/dpci6_bop.t
+t/lib/Business/OnlinePayment/Mock.pm
+t/lib/Business/OnlinePayment/MockPopup.pm
 t/lib/Dancer/Template/TemplateFlute.pm
 t/lib/Role/Deploy.pm
 t/lib/TestApp.pm
