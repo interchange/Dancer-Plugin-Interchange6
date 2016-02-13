@@ -187,8 +187,28 @@ test 'route tests' => sub {
 
     $mech->content_like( qr/cart_total="48/, 'cart_total is 48.00' );
 
-    # update with no quantity
+    # remove product not in the cart
+    $self->trap->read;
+    $mech->post_ok(
+        '/cart',
+        { remove => 'definitelynotinthecart' },
+        "POST /cart remove product that is not in the cart"
+    );
+    
+    $log = $self->trap->read;
+    cmp_deeply(
+        $log,
+        superbagof(
+            {
+                level => "warning",
+                message => re(qr/^Cart remove error/),
+            }
+        ),
+        "check debug logs for cart remove"
+    ) or diag explain $log;
+    
 
+    # update with no quantity
     $mech->post_ok(
         '/cart',
         { update => 'os28004-HUM-BLK' },
