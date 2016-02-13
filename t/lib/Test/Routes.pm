@@ -187,6 +187,16 @@ test 'route tests' => sub {
 
     $mech->content_like( qr/cart_total="48/, 'cart_total is 48.00' );
 
+    # update with no quantity
+
+    $mech->post_ok(
+        '/cart',
+        { update => 'os28004-HUM-BLK' },
+        "POST /cart update os28004-HUM-BLK with no quantity"
+    );
+
+    $mech->content_like( qr/cart_total="48/, 'cart_total is 48.00' );
+
     # GET /cart
     $mech->get_ok( '/cart', "GET /cart" );
 
