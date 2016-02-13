@@ -234,6 +234,26 @@ test 'route tests' => sub {
         "check debug logs for cart remove"
     ) or diag explain $log;
 
+    # add product with non-Int quantity
+    $self->trap->read;
+    $mech->post_ok(
+        '/cart',
+        { sku => 'os28004-HUM-BLK', quantity => 1.1 },
+        "POST /cart add with non-integer quantity"
+    );
+    
+    $log = $self->trap->read;
+    cmp_deeply(
+        $log,
+        superbagof(
+            {
+                level => "warning",
+                message => re(qr/^Cart add error/),
+            }
+        ),
+        "check debug logs for cart remove"
+    ) or diag explain $log;
+
     # GET /cart
     $mech->get_ok( '/cart', "GET /cart" );
 
