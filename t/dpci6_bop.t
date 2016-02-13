@@ -30,13 +30,18 @@ lives_ok {
 }
 "create mock bop object with test_type die";
 
-throws_ok { $bop->charge( amount => 1 ) } qr/test_type die/,
-  "charge dies with test_type die";
+throws_ok {
+    $bop->charge( amount => 1, type => 'CC', action => 'Authorization Only' )
+}
+qr/test_type die/, "charge dies with test_type die";
 
 lives_ok {
-    $bop =
-      Dancer::Plugin::Interchange6::Business::OnlinePayment->new( 'Mock',
-        test_type => "declined;invalid cvc" )
+    $bop = Dancer::Plugin::Interchange6::Business::OnlinePayment->new(
+        'Mock',
+        test_type => "declined;invalid cvc",
+        type      => 'CC',
+        action    => 'Authorization Only'
+      )
 }
 "create mock bop object with test_type declined;invalid cvc";
 
@@ -90,7 +95,7 @@ cmp_deeply(
 lives_ok {
     $bop =
       Dancer::Plugin::Interchange6::Business::OnlinePayment->new( 'MockPopup',
-        test_type => "success" )
+        test_type => "success", server => "www.example.com" )
 }
 "create MockPopup bop object with test_type success";
 
