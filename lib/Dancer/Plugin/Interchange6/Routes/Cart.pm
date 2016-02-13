@@ -32,7 +32,7 @@ sub cart_route {
             $cart_product, $roles, @errors);
 
         $cart_name = param('cart');
-        $cart = $cart_name && ref($cart_name) eq '' ? cart($cart_name) : cart;
+        $cart = $cart_name ? cart($cart_name) : cart;
 
         debug "cart_route cart name: " . $cart->name;
 
