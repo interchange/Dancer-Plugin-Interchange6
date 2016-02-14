@@ -321,7 +321,7 @@ register shop_charge => sub {
     die "No payment setting" unless $payment_settings;
 
     # determine payment provider
-    if (exists $args{provider} && $args{provider}) {
+    if ( $args{provider} ) {
         $provider = $args{provider};
     }
     else {
