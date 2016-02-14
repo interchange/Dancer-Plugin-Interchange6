@@ -26,3 +26,10 @@ plugins:
       active: 1
     navigation:
       records: 10
+    Payment:
+      default_provider: Mock
+      Providers:
+        Mock:
+          server: www.example.com
+        MockPopup:
+          foo: bar
