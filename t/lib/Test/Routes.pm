@@ -15,7 +15,7 @@ test 'route tests' => sub {
 
     diag "Test::Routes";
 
-    my ( $resp, $sessionid, %form, $log, $user, @carts );
+    my ( $resp, $sessionid, %form, $log, $user, @carts, $product );
 
     my $schema = $self->ic6s_schema;
 
@@ -265,6 +265,22 @@ test 'route tests' => sub {
         qr/cart="os28004-CAM-BLK:.+:2:16.+,os28004-CAM-WHT:.+:1:16/,
         'found qty 1 os28004-CAM-WHT in cart and qty 2 BLK'
     );
+
+    # get product by sku that has no uri
+
+    lives_ok {
+        $product = $self->ic6s_schema->resultset('Product')->create(
+            { sku => 'NoUri', name => 'No URI', description => '', price => 1 }
+          )
+    }
+    "create product NoUri with no uri";
+
+    # uri is generated on insert so we have to delete the auto-generated one
+    lives_ok { $product->update({ uri => undef }) } "undef product uri";
+
+    $mech->get_ok( '/NoUri', 'GET /NoUri' );
+
+    $mech->base_is( 'http://localhost/NoUri', "uri is /NoUri" );
 
     # login
 
