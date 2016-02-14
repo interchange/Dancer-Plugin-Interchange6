@@ -262,19 +262,18 @@ sub _setup_routes {
         # check for a matching product by uri
         my $product = shop_product->find({uri => $path});
 
-        if (!defined $product) {
+        if (!$product) {
 
             # check for a matching product by sku
             $product = shop_product($path);
 
-            if ($product) {
-                if ($product->uri
-                    && $product->uri ne $path) {
-                    # permanent redirect to specific URL
-                    debug "Redirecting permanently to product uri ", $product->uri,
-                        " for $path.";
-                    return redirect(uri_for($product->uri), 301);
-                }
+            if ( $product && $product->uri ) {
+
+                # permanent redirect to specific URL
+                debug "Redirecting permanently to product uri ",
+                  $product->uri,
+                  " for $path.";
+                return redirect( uri_for( $product->uri ), 301 );
             }
         }
 
