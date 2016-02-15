@@ -16,34 +16,24 @@ my ( $bop, $log );
 my $trap = Dancer::Logger::Capture->trap;
 
 lives_ok {
-    $bop = Dancer::Plugin::Interchange6::Business::OnlinePayment->new('Mock')
-}
-"create mock bop object with no test_type";
-
-throws_ok { $bop->charge( amount => 1 ) } qr/test_type not defined/,
-  "charge dies with no test_type";
-
-lives_ok {
     $bop =
-      Dancer::Plugin::Interchange6::Business::OnlinePayment->new( 'Mock',
-        test_type => "die" )
+      Dancer::Plugin::Interchange6::Business::OnlinePayment->new( 'MockDie' );
 }
-"create mock bop object with test_type die";
+"create mock bop object with provider MockDie";
 
 throws_ok {
     $bop->charge( amount => 1, type => 'CC', action => 'Authorization Only' )
 }
-qr/test_type die/, "charge dies with test_type die";
+qr/Payment with provider MockDie failed/, "Payment with provider MockDie dies";
 
 lives_ok {
     $bop = Dancer::Plugin::Interchange6::Business::OnlinePayment->new(
-        'Mock',
-        test_type => "declined;invalid cvc",
+        'MockFail',
         type      => 'CC',
         action    => 'Authorization Only'
       )
 }
-"create mock bop object with test_type declined;invalid cvc";
+"create mock bop object with provider MockFail";
 
 lives_ok { $bop->charge( amount => 1 ) } "charge lives";
 
@@ -57,7 +47,7 @@ cmp_deeply(
     superbagof(
         {
             level   => "debug",
-            message => "Card was rejected by Mock: invalid cvc",
+            message => "Card was rejected by MockFail: invalid cvc",
         }
     ),
     "got expected debug messages"
@@ -65,10 +55,9 @@ cmp_deeply(
 
 lives_ok {
     $bop =
-      Dancer::Plugin::Interchange6::Business::OnlinePayment->new( 'Mock',
-        test_type => "success" )
+      Dancer::Plugin::Interchange6::Business::OnlinePayment->new( 'MockSuccess')
 }
-"create mock bop object with test_type success";
+"create mock bop object with provider MockSuccess";
 
 lives_ok { $bop->charge( amount => 1 ) } "charge lives";
 
@@ -97,7 +86,7 @@ lives_ok {
       Dancer::Plugin::Interchange6::Business::OnlinePayment->new( 'MockPopup',
         test_type => "success", server => "www.example.com" )
 }
-"create MockPopup bop object with test_type success";
+"create MockPopup bop object";
 
 lives_ok { $bop->charge( amount => 1 ) } "charge lives";
 

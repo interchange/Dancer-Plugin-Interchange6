@@ -14,7 +14,7 @@ Configuration for AuthorizeNet provider:
 
   plugins:
     Interchange6:
-      Payment:
+      payment:
         default_provider: AuthorizeNet
         providers:
           AuthorizeNet:

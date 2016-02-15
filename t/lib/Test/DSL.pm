@@ -55,13 +55,51 @@ test 'shop_cart' => sub {
 };
 
 test 'shop_charge' => sub {
+    my $self = shift;
 
     my $charge;
+    my $paymentorder_rset = $self->ic6s_schema->resultset('PaymentOrder');
 
-    # FIXME we need some tests here
+    lives_ok { $paymentorder_rset->delete_all }
+    "delete existing payment orders";
 
-    throws_ok { $charge = shop_charge } qr/No payment setting/,
-      "shop_charge dies";
+    throws_ok { $charge = shop_charge } qr/Exception/,
+      "shop_charge with default provider but no amount dies";
+
+    lives_ok { $charge = shop_charge( amount => 1 ) }
+      "shop_charge with default provider and amount lives";
+
+    ok $charge->is_success,           "charge was successful";
+    cmp_ok $charge->authorization,    '==', 1, "got authorization";
+    cmp_ok $charge->order_number,     '==', 1001, "got order_number";
+    cmp_ok $paymentorder_rset->count, '==', 1, "1 payment order in db";
+    isa_ok $charge->payment_order,
+      "Interchange6::Schema::Result::PaymentOrder", "payment_order";
+    ok $charge->payment_order->in_storage, "payment_order is in_storage";
+    cmp_ok $charge->payment_order->status, 'eq', 'success',
+      "payment_order status eq success";
+
+    lives_ok { $charge = shop_charge( amount => 1, provider => 'MockSuccess' ) }
+    "shop_charge with MockSuccess provider and amount lives";
+
+    ok $charge->is_success, "charge was successful";
+    cmp_ok $charge->authorization, '==', 2, "got authorization";
+    cmp_ok $charge->order_number, '==', 1002, "got order_number";
+    cmp_ok $paymentorder_rset->count, '==', 2, "2 payment orders in db";
+
+    lives_ok { $charge = shop_charge( amount => 1, provider => 'MockFail' ) }
+    "shop_charge with MockFail provider and amount lives";
+
+    cmp_ok $paymentorder_rset->count, '==', 3, "3 payment orders in db";
+    cmp_ok $charge->payment_order->status, 'eq', 'failure',
+      "payment_order status eq failure";
+
+    throws_ok { $charge = shop_charge( amount => 1, provider => 'MockDie' ) }
+    qr/Payment with provider MockDie failed/,
+    "shop_charge with MockDie provider dies";
+
+    cmp_ok $paymentorder_rset->count, '==', 4, "4 payment orders in db";
+
 };
 
 test 'shop_redirect' => sub {

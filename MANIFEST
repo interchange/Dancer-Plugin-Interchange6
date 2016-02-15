@@ -15,7 +15,9 @@ README
 t/00-load.t
 t/config.yml
 t/dpci6_bop.t
-t/lib/Business/OnlinePayment/Mock.pm
+t/lib/Business/OnlinePayment/MockDie.pm
+t/lib/Business/OnlinePayment/MockFail.pm
+t/lib/Business/OnlinePayment/MockSuccess.pm
 t/lib/Business/OnlinePayment/MockPopup.pm
 t/lib/Dancer/Template/TemplateFlute.pm
 t/lib/Role/Deploy.pm

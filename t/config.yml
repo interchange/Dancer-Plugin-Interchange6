@@ -21,15 +21,18 @@ plugins:
         username_column: username
         password_column: password
         password_check: check_password
+  Interchange6:
+    payment:
+      default_provider: MockSuccess
+      providers:
+        MockDie:
+          foo: bar
+        MockFail: 
+          foo: bar
+        MockSuccess:
+          foo: bar
   Interchange6::Routes:
     checkout:
       active: 1
     navigation:
       records: 10
-    Payment:
-      default_provider: Mock
-      Providers:
-        Mock:
-          server: www.example.com
-        MockPopup:
-          foo: bar
