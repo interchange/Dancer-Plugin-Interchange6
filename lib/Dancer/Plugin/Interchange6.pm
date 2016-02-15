@@ -392,15 +392,13 @@ sub _shop_cart {
       || 'Dancer::Plugin::Interchange6::Cart';
     load_class $cart_class;
 
-    my $carts = var $var || {};
+    my $carts = var($var) || {};
 
     if ( !defined $carts->{ $args{name} } ) {
 
         # can't find this cart in stash
 
         $args{sessions_id} = session->id;
-        # FIXME: not sure what the following line is for
-        #$args{execute_hook} = sub { execute_hook(@_) };
 
         if ( $user_ref = logged_in_user ) {
 
