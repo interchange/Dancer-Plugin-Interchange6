@@ -63,6 +63,10 @@ test 'shop_charge' => sub {
     lives_ok { $paymentorder_rset->delete_all }
     "delete existing payment orders";
 
+    throws_ok { $charge = shop_charge( provider => "BadProvider" ) }
+    qr/Settings for provider BadProvider missing/,
+      "shop_charge with bad provider dies";
+
     throws_ok { $charge = shop_charge } qr/Exception/,
       "shop_charge with default provider but no amount dies";
 
