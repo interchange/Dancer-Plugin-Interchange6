@@ -6,6 +6,7 @@ use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::Interchange6::Routes::Account;
 use Dancer::Plugin::Interchange6::Routes::Cart;
 use Dancer::Plugin::Interchange6::Routes::Checkout;
+use Dancer::Plugin::Auth::Extensible;
 
 =head1 NAME
 
@@ -180,6 +181,21 @@ Disable parts of layout on the login view:
     };
 
 =cut
+
+=head1 DANCER HOOKS
+
+The following standard L<Dancer> hooks are used:
+
+=head2 before
+
+Set L<Interchange6::Schema/current_user> for the default schema
+to L<Dancer::Plugin::Auth::Extensible/logged_in_user> or C<undef>.
+
+=cut
+
+hook before => sub {
+    shop_schema->set_current_user( logged_in_user || undef );
+};
 
 register shop_setup_routes => sub {
     _setup_routes();

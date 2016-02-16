@@ -327,6 +327,10 @@ test 'route tests' => sub {
 
     # good login
 
+    $mech->get_ok( '/current_user', 'GET /current_user' );
+
+    $mech->content_is( 'undef', "content is 'undef'" );
+
     $mech->post_ok(
         '/login',
         {
@@ -346,6 +350,10 @@ test 'route tests' => sub {
         ),
         "users_id set in debug logs and login successful"
     ) or diag explain $log;
+
+    $mech->get_ok( '/current_user', 'GET /current_user' );
+
+    $mech->content_is( 'Customer One', "content is 'Customer One'" );
 
     $mech->get_ok( '/sessionid', "GET /sessionid" );
 

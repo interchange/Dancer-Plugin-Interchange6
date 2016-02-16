@@ -40,6 +40,15 @@ post '/set_cart_sessions_id' => sub {
     shop_cart->set_sessions_id( param('id') );
 };
 
+get '/current_user' => sub {
+    if ( my $user = shop_schema->current_user ) {
+        return $user->name;
+    }
+    else {
+        return 'undef';
+    }
+};
+
 shop_setup_routes;
 
 # HOOKS
