@@ -355,7 +355,7 @@ sub _setup_routes {
               ->navigation_products
               ->search_related('product')
               ->active
-              ->listing( { users_id => session('logged_in_user_id') } )
+              ->listing
               ->order_by('!me.priority,!product.priority');
 
             if ( defined $routes_config->{navigation}->{records} ) {
