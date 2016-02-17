@@ -276,12 +276,12 @@ sub _setup_routes {
         my $path = captures->{'path'};
 
         # check for a matching product by uri
-        my $product = shop_product->find({uri => $path});
+        my $product = shop_product->single( { uri => $path, active => 1 } );
 
         if (!$product) {
 
             # check for a matching product by sku
-            $product = shop_product($path);
+            $product = shop_product->single( { sku => $path, active => 1 } );
 
             if ( $product && $product->uri ) {
 
@@ -294,24 +294,19 @@ sub _setup_routes {
         }
 
         if ($product) {
-            if ($product->active) {
-                # flypage
-                my $tokens = {product => $product};
 
-                execute_hook('before_product_display', $tokens);
+            # flypage
+            my $tokens = { product => $product };
 
-                my $output = template $routes_config->{product}->{template}, $tokens;
+            execute_hook( 'before_product_display', $tokens );
 
-                # temporary way to erase cart errors from missing variants
-                session shop_cart_error => undef;
+            my $output = template $routes_config->{product}->{template},
+              $tokens;
 
-                return $output;
-            }
-            else {
-                # discontinued
-                status 'not_found';
-                forward 404; 
-            }
+            # temporary way to erase cart errors from missing variants
+            session shop_cart_error => undef;
+
+            return $output;
         }
 
         # check for page number
@@ -325,7 +320,7 @@ sub _setup_routes {
         }
 
         # first check for navigation item
-        my $nav = shop_navigation->find({uri => $path});
+        my $nav = shop_navigation->single( { uri => $path, active => 1 } );
 
         if (defined $nav) {
 
