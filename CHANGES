@@ -1,5 +1,40 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.101 Sun Feb 28 08:10:37 2016 CET
+
+    [BUG FIXES]
+
+    * cart param in cart route was not setting cart name correctly
+      (Peter Mottram).
+    * Fix bug in update method of Cart class and a few POD corrections
+      (Peter Mottram).
+
+    [ENHANCEMENTS]
+
+    * product and navigation find now use ->single and active => 1
+      (Peter Mottram).
+    * Set new current_user attribute of the schema in the before hook
+      (Peter Mottram).
+    * Remove unreachable code from shop_setup_routes config parser
+      (Peter Mottram).
+    * Use var with parentheses when getting carts stash in shop_cart dsl
+      function (Peter Mottram).
+    * Remove unnecessary `exists` condition from shop_charge
+      (Peter Mottram).
+    * Remove unnecessary condition from flypage route (Peter Mottram).
+    * Simplify cart route where param cart is passed in (Peter Mottram).
+    * Change warn for missing maximum for navigation routes to warning
+      (Peter Mottram).
+    * Check quantity in Routes::Cart update to be defined not truthy
+      (Peter Mottram).
+    * Lower minimum Perl version to 5.10 (Peter Mottram).
+    * Remove BUILDARGS from Cart class and stash DBIC cart in attributes
+      (Peter Mottram).
+
+    [TESTS]
+
+    * Add numerous tests for full code coverage (Peter Mottram).
+
 0.100 Mon Aug 31 17:24:07 2015 CEST
 
     [ENHANCEMENTS]
