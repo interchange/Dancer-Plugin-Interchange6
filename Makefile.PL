@@ -35,7 +35,6 @@ WriteMakefile(
                   'Class::Load' => 0,
                   'MooseX::CoverableModifiers' => 0,
                   'namespace::clean' => 0,
-                  'Type::Tiny' => 0,
                   # Net::HTTPS::Any is required by Business::OnlinePayment but
                   # versions before 0.11 have a habit of failing to install
                   # so add this dep to make installing DPIC6 more reliable

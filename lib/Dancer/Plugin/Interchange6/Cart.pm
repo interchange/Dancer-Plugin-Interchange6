@@ -24,7 +24,7 @@ use Try::Tiny;
 
 use Moo;
 use MooseX::CoverableModifiers;
-use Types::Standard qw/InstanceOf Str/;
+use Interchange6::Types -types;
 
 extends 'Interchange6::Cart';
 
