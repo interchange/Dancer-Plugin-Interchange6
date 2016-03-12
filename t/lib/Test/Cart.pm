@@ -372,28 +372,6 @@ test 'main cart tests' => sub {
         }
     }
 
-    lives_ok {
-        $cart->seed(
-            [
-                { sku => 'ABC',  name => 'ABC',  price => 2, quantity => 1 },
-                { sku => 'ABCD', name => 'ABCD', price => 3, quantity => 2 },
-            ]
-        );
-    }
-    "Seed cart";
-
-    cmp_ok( $cart->count, '==', 2, "2 products in cart" );
-
-    cmp_ok( $cart->quantity, '==', 3, "Quantity is 3" );
-
-    cmp_ok( $cart->total, '==', 8, "Total is 8" );
-
-    lives_ok { $cart->clear } "Clear cart";
-
-    cmp_ok( $cart->count, '==', 0, "0 products in cart" );
-
-    cmp_ok( $cart->quantity, '==', 0, "Quantity is 0" );
-
     lives_ok( sub { $schema->resultset('Cart')->delete_all },
         "delete all carts" );
 
