@@ -11,7 +11,7 @@ use Dancer::Plugin::Auth::Extensible;
 use Dancer::Plugin::Interchange6::Cart;
 use Dancer::Plugin::Interchange6::Business::OnlinePayment;
 
-use Class::Load ':all';
+use Module::Runtime 'use_module';
 
 =head1 NAME
 
@@ -390,7 +390,6 @@ sub _shop_cart {
     # cart class
     my $cart_class = plugin_setting->{cart_class}
       || 'Dancer::Plugin::Interchange6::Cart';
-    load_class $cart_class;
 
     my $carts = var($var) || {};
 
@@ -406,7 +405,7 @@ sub _shop_cart {
             $args{users_id} = $user_ref->users_id;
         }
 
-        $carts->{ $args{name} } = $cart_class->new(%args);
+        $carts->{ $args{name} } = use_module($cart_class)->new(%args);
     }
 
     # stash carts back in var
