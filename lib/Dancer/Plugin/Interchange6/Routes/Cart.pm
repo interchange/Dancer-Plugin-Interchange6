@@ -156,8 +156,9 @@ sub cart_route {
                 try {
                     $cart->add(
                         {
-                            sku      => $cart_product->sku,
-                            quantity => $quantity
+                            dbic_product => $cart_product,
+                            sku          => $cart_product->sku,
+                            quantity     => $quantity
                         }
                     );
                 }
