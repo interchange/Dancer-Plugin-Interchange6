@@ -32,7 +32,7 @@ WriteMakefile(
                   'Dancer::Plugin::Auth::Extensible' => 0,
                   'Dancer::Plugin::Auth::Extensible::Provider::DBIC' => 0,
                   'Business::OnlinePayment' => 3.02,
-                  'Class::Load' => 0,
+                  'Module::Runtime' => 0,
                   'MooseX::CoverableModifiers' => 0,
                   'namespace::clean' => 0,
                   # Net::HTTPS::Any is required by Business::OnlinePayment but
