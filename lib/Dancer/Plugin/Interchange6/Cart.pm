@@ -115,6 +115,16 @@ sub _build_id {
     return shift->dbic_cart->id,
 }
 
+=head2 product_class
+
+Inherited. Change default to L<Dancer::Plugin::Interchange6::Cart::Product>.
+
+=cut
+
+has '+product_class' => (
+    default => 'Dancer::Plugin::Interchange6::Cart::Product',
+);
+
 =head2 sessions_id
 
 Extends inherited sessions_id attribute.
