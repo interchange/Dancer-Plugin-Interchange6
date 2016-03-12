@@ -167,6 +167,7 @@ sub BUILD {
 
         push @products,
           {
+            dbic_product  => $record->product,
             id            => $record->cart_products_id,
             sku           => $record->sku,
             canonical_sku => $record->product->canonical_sku,
@@ -175,9 +176,6 @@ sub BUILD {
             price         => $record->product->price,
             uri           => $record->product->uri,
             weight        => $record->product->weight,
-            selling_price => $record->product->selling_price(
-                { quantity => $record->quantity, roles => $roles }
-            ),
           };
     }
 
@@ -235,15 +233,15 @@ around 'add' => sub {
           unless defined $result;
 
         my $product = {
+            dbic_product  => $result,
             name          => $result->name,
             price         => $result->price,
             sku           => $result->sku,
             canonical_sku => $result->canonical_sku,
             uri           => $result->uri,
             weight        => $result->weight,
+            quantity      => defined $arg->{quantity} ? $arg->{quantity} : 1,
         };
-        $product->{quantity} = $arg->{quantity}
-          if defined( $arg->{quantity} );
 
         push @products, $product;
     }
@@ -275,14 +273,6 @@ around 'add' => sub {
                 }
             );
         }
-
-        # set selling_price
-
-        my $query = { quantity => $ret->quantity };
-        if ( logged_in_user ) {
-            $query->{roles} = [ user_roles ];
-        }
-        $ret->set_selling_price( $cart_product->product->selling_price($query) );
 
         push @ret, $ret;
     }
