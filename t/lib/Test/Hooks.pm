@@ -195,7 +195,7 @@ test 'cart_add hooks' => sub {
             },
             {
                 level => 'debug',
-                message => 'hook after_cart_add main 8.99 Interchange6::Cart::Product os28005 Trim Brush'
+                message => 'hook after_cart_add main 8.99 Dancer::Plugin::Interchange6::Cart::Product os28005 Trim Brush'
             },
         ),
         "check debug logs"
