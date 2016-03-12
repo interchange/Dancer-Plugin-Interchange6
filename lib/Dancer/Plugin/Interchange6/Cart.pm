@@ -258,7 +258,7 @@ around 'add' => sub {
         # update or create in db
 
         my $cart_product =
-          $self->dbic_cart_products->search( { 'me.sku' => $product->{sku} },
+          $self->dbic_cart_products->search( { 'me.sku' => $ret->sku },
             { rows => 1 } )->single;
 
         if ( $cart_product ) {
