@@ -1,5 +1,20 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.110 Mon Mar 14 21:40:10 2016 CET
+
+    [ENHANCEMENTS]
+
+    * Pass dbic_product in cart BUILD and add but do not set selling_price
+      (Peter Mottram).
+    * Add product_class attribute to Cart (Peter Mottram).
+    * Add Dancer::Plugin::Cart::Product class (Peter Mottram).
+      Subclasses Interchange6::Cart::Product adding dbic_product attribute
+      along with lazy builder for selling_price attrbute which is cleared when
+      quantity is changed.
+    * Pass dbic_product attribute in Cart route 'add' (Peter Mottram).
+    * Switch from Class::Load to Module::Runtime (Peter Mottram).
+    * Switch to using Interchange6::Types (Peter Mottram).
+
 0.101 Sun Feb 28 08:10:37 2016 CET
 
     [BUG FIXES]
