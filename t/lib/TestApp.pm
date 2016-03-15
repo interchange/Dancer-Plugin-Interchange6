@@ -65,7 +65,7 @@ hook before_cart_display => sub {
     debug join( " ",
         "hook before_cart_display",
         scalar @$products,
-        $cart_subtotal, $cart_total );
+        sprintf( "%.2f", $cart_subtotal ), sprintf( "%.2f", $cart_total ) );
 
     $tokens->{cart} = join(
         ",",
@@ -87,7 +87,7 @@ hook before_checkout_display => sub {
     debug join( " ",
         "hook before_checkout_display",
         scalar @$products,
-        $cart_subtotal, $cart_total );
+        sprintf( "%.2f", $cart_subtotal ), sprintf( "%.2f", $cart_total ) );
 
 
     $tokens->{cart} = join(
@@ -115,7 +115,7 @@ hook before_product_display => sub {
 
     debug join( " ",
         "hook before_product_display",
-        $product->sku, $product->name, $product->price );
+        $product->sku, $product->name, sprintf( "%.2f", $product->price ) );
 
     $tokens->{name} = $product->name;
 };
@@ -154,7 +154,9 @@ hook before_cart_add_validate => sub {
 
     debug join( " ",
         "hook before_cart_add_validate",
-        $cart->name, $cart->total, $args->[0]->{sku} || 'undef' );
+        $cart->name,
+        sprintf( "%.2f", $cart->total ),
+        $args->[0]->{sku} || 'undef' );
 };
 
 hook before_cart_add => sub {
@@ -162,7 +164,7 @@ hook before_cart_add => sub {
 
     debug join( " ",
         "hook before_cart_add",
-        $cart->name, $cart->total,
+        $cart->name, sprintf( "%.2f", $cart->total ),
         $products->[0]->{sku},
         $products->[0]->{name} );
 };
@@ -172,7 +174,7 @@ hook after_cart_add => sub {
 
     debug join( " ",
         "hook after_cart_add",
-        $cart->name, $cart->total,
+        $cart->name, sprintf( "%.2f", $cart->total ),
         ref( $products->[0] ),
         $products->[0]->sku,
         $products->[0]->name );
@@ -186,7 +188,7 @@ hook before_cart_update => sub {
 
     debug join( " ",
         "hook before_cart_update",
-        $cart->name, $cart->total, $sku, $quantity );
+        $cart->name, sprintf( "%.2f", $cart->total ), $sku, $quantity );
 };
 
 hook after_cart_update => sub {
@@ -202,7 +204,7 @@ hook before_cart_remove_validate => sub {
 
     debug join( " ",
         "hook before_cart_remove_validate",
-        $cart->name, $cart->total, $sku || 'undef' );
+        $cart->name, sprintf( "%.2f", $cart->total ), $sku || 'undef' );
 };
 
 hook before_cart_remove => sub {
@@ -210,7 +212,7 @@ hook before_cart_remove => sub {
 
     debug join( " ",
         "hook before_cart_remove",
-        $cart->name, $cart->total, $sku || 'undef' );
+        $cart->name, sprintf( "%.2f", $cart->total ), $sku || 'undef' );
 };
 
 hook after_cart_remove => sub {
@@ -218,7 +220,7 @@ hook after_cart_remove => sub {
 
     debug join( " ",
         "hook after_cart_remove",
-        $cart->name, $cart->total, $sku );
+        $cart->name, sprintf( "%.2f", $cart->total ), $sku );
 };
 
 hook before_cart_rename => sub {
@@ -242,13 +244,17 @@ hook after_cart_rename => sub {
 hook before_cart_clear => sub {
     my ($cart) = @_;
 
-    debug join( " ", "hook before_cart_clear", $cart->name, $cart->total );
+    debug join( " ",
+        "hook before_cart_clear",
+        $cart->name, sprintf( "%.2f", $cart->total ) );
 };
 
 hook after_cart_clear => sub {
     my ($cart) = @_;
 
-    debug join( " ", "hook after_cart_clear", $cart->name, $cart->total );
+    debug join( " ",
+        "hook after_cart_clear",
+        $cart->name, sprintf( "%.2f", $cart->total ) );
 };
 
 hook before_cart_set_users_id => sub {
@@ -256,7 +262,7 @@ hook before_cart_set_users_id => sub {
 
     debug join( " ",
         "hook before_cart_set_users_id",
-        $cart->name, $cart->total,
+        $cart->name, sprintf( "%.2f", $cart->total ),
         $cart->users_id || 'undef',
         $users_id || 'undef' );
 };
@@ -271,7 +277,8 @@ hook before_cart_set_sessions_id => sub {
 
     debug join( " ",
         "hook before_cart_set_sessions_id",
-        $cart->name, $cart->total,
+        $cart->name,
+        sprintf( "%.2f", $cart->total ),
         $cart->sessions_id || 'undef',
         $sessions_id || 'undef' );
 };
