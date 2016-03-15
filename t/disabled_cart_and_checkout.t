@@ -1,5 +1,6 @@
 use lib 't/lib';
-use Test::More import => ['!pass'], tests => 3;
+use Test::More import => ['!pass'], tests => 4;
+use Test::Exception;
 use Test::WWW::Mechanize::PSGI;
 use Dancer;
 use Dancer::Plugin::Interchange6;
@@ -33,17 +34,31 @@ setting('plugins')->{DBIC} = {
     }
 };
 
-my $schema = shop_schema;
-$schema->deploy;
+set logger => 'capture';
+set log    => 'error';
 
-my $fixtures = Fixtures->new( ic6s_schema => $schema );
-$fixtures->navigation;
+my $trap = Dancer::Logger::Capture->trap;
+
+my ( $schema, $fixtures );
+
+subtest "deploy and install fixtures" => sub {
+
+    lives_ok { $schema = shop_schema } "Connect to schema"
+      or diag explain $trap->read;
+
+    lives_ok { $schema->deploy } "Deploy schema" or diag explain $trap->read;
+
+    lives_ok { $fixtures = Fixtures->new( ic6s_schema => $schema ) }
+    "get fixtures"
+      or diag explain $trap->read;
+
+    lives_ok { $fixtures->navigation } "deploy navigation fixtures"
+      or diag explain $trap->read;
+};
 
 set session => 'DBIC';
 set session_options => { schema => $schema, };
 
-set logger   => 'capture';
-set log      => 'error';
 set template => 'template_flute';    # for coverage testing only
 setting('plugins')->{'Interchange6::Routes'} = {
     cart     => { active  => 0 },
@@ -78,8 +93,6 @@ subtest "checkout route not defined" => sub {
 };
 
 subtest "navigation with undef records" => sub {
-
-    my $trap = Dancer::Logger::Capture->trap;
 
     $trap->read;
     $mech->get('/hand-tools');
