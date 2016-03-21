@@ -19,6 +19,7 @@ use Dancer qw(:syntax !before !after);
 use Dancer::Plugin;
 use Dancer::Plugin::Auth::Extensible;
 use Dancer::Plugin::DBIC;
+use Module::Runtime 'use_module';
 use Scalar::Util 'blessed';
 use Try::Tiny;
 
@@ -310,72 +311,70 @@ Pulls old cart items into current cart - used after user login.
 =cut
 
 sub load_saved_products {
-    my ( $self, %args ) = @_;
-    my ( $uid, $result, $code );
+    my $self = shift;
 
     # should not be called unless user is logged in
     return unless $self->users_id;
 
-    # grab the resultset for current cart so we can update products easily if
-    # we find old saved cart products
-
-    my $current_cart_rs = schema( $self->database )->resultset('Cart')->search(
-        {
-            'me.name'        => $self->name,
-            'me.users_id'    => $self->users_id,
-            'me.sessions_id' => $self->sessions_id,
-        }
-    )->search_related( 'cart_products', {}, );
-
     # find old carts and see if they have products we should move into
-    # our new cart + remove the old carts as we go
+    # our new cart
 
-    $result = schema( $self->database )->resultset('Cart')->search(
+    my $old_carts = schema( $self->database )->resultset('Cart')->search(
         {
             'me.name'        => $self->name,
             'me.users_id'    => $self->users_id,
             'me.sessions_id' => [ undef, { '!=', $self->sessions_id } ],
+        },
+        {
+            prefetch => { cart_products => 'product' },
         }
     );
 
-    while ( my $cart = $result->next ) {
+    while ( my $cart = $old_carts->next ) {
 
-        my $related = $cart->search_related(
-            'cart_products',
-            {},
-            {
-                join     => 'product',
-                prefetch => 'product',
-            }
-        );
-        while ( my $record = $related->next ) {
+        my $cart_products = $cart->cart_products;
+        while ( my $cart_product = $cart_products->next ) {
 
             # look for this sku in our current cart
 
-            my $product =
-              $self->dbic_cart_products->search( { 'me.sku' => $record->sku },
-                { rows => 1 } )->single;
+            my $product = $self->dbic_cart_products->single(
+                { 'me.sku' => $cart_product->sku } );
 
             if ( $product ) {
 
                 # we have this sku in our new cart so update quantity
-                $product->update(
-                    {
-                        quantity => $product->quantity + $record->quantity
-                    }
-                );
+                my $quantity = $product->quantity + $cart_product->quantity;
+
+                # update in DB
+                $product->update( { quantity => $quantity } );
+
+                # update Interchange6::Cart::Product object
+                $self->find( $cart_product->sku )->set_quantity($quantity);
             }
             else {
 
                 # move product into new cart
-                $record->update( { carts_id => $self->id } );
-            }
-        }
+                $cart_product->update( { carts_id => $self->id } );
 
-        # delete the old cart (cascade deletes related cart products)
-        $cart->delete;
+                # add to Interchange6::Cart
+                push @{ $self->products },
+                  use_module( $self->product_class )->new(
+                    dbic_product  => $cart_product->product,
+                    id            => $cart_product->id,
+                    sku           => $cart_product->sku,
+                    canonical_sku => $cart_product->product->canonical_sku,
+                    name          => $cart_product->product->name,
+                    quantity      => $cart_product->quantity,
+                    price         => $cart_product->product->price,
+                    uri           => $cart_product->product->uri,
+                    weight        => $cart_product->product->weight,
+                  );
+              }
+        }
     }
 
+    # delete the old carts (cascade deletes related cart products)
+    $old_carts->delete;
 }
 
 =head2 remove
