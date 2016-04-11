@@ -550,7 +550,9 @@ test 'route tests' => sub {
                     'created'          => ignore(),
                     'last_modified'    => ignore(),
                     'quantity'         => 2,
-                    'sku'              => 'os28004-CAM-WHT'
+                    'sku'              => 'os28004-CAM-WHT',
+                    'combine'          => ignore(),
+                    'extra'            => ignore(),
                 },
                 {
                     'cart_position'    => 0,
@@ -559,7 +561,9 @@ test 'route tests' => sub {
                     'created'          => ignore(),
                     'last_modified'    => ignore(),
                     'quantity'         => 1,
-                    'sku'              => 'os28004-CAM-BLK'
+                    'sku'              => 'os28004-CAM-BLK',
+                    'combine'          => ignore(),
+                    'extra'            => ignore(),
                 }
             ),
             'carts_id'      => ignore(),
@@ -579,7 +583,7 @@ test 'route tests' => sub {
             'users_id'      => undef
         }
       ],
-      "carts contents are as we expect";
+      "carts contents are as we expect" or diag explain @carts;
 
     $mech->content_like( qr/cart_subtotal="0\.00/, 'cart_subtotal is 0.00' );
 
@@ -620,7 +624,9 @@ test 'route tests' => sub {
                     'created'          => ignore(),
                     'last_modified'    => ignore(),
                     'quantity'         => 3,
-                    'sku'              => 'os28004-CAM-WHT'
+                    'sku'              => 'os28004-CAM-WHT',
+                    'combine'          => ignore(),
+                    'extra'            => ignore(),
                 },
                 {
                     'cart_position'    => 0,
@@ -629,7 +635,9 @@ test 'route tests' => sub {
                     'created'          => ignore(),
                     'last_modified'    => ignore(),
                     'quantity'         => 1,
-                    'sku'              => 'os28004-CAM-BLK'
+                    'sku'              => 'os28004-CAM-BLK',
+                    'combine'          => ignore(),
+                    'extra'            => ignore(),
                 }
             ),
             'carts_id'      => ignore(),
@@ -640,7 +648,7 @@ test 'route tests' => sub {
             'users_id'      => re(qr/\d/),
         },
       ],
-      "carts contents are as we expect";
+      "carts contents are as we expect" or diag explain @carts;
 
     $mech->get_ok( '/cart', "GET /cart" );
 
