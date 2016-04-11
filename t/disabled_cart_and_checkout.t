@@ -1,10 +1,14 @@
 use lib 't/lib';
-use Test::More import => ['!pass'], tests => 4;
+use Test::More import => ['!pass'];
 use Test::Exception;
 use Test::WWW::Mechanize::PSGI;
 use Dancer;
 use Dancer::Plugin::Interchange6;
 use Dancer::Plugin::Interchange6::Routes;
+
+unless ( $ENV{RELEASE_TESTING} ) {
+    plan( skip_all => "Author tests not required for installation" );
+}
 
 {
     package Fixtures;
@@ -103,3 +107,5 @@ subtest "navigation with undef records" => sub {
       'Supplied view (category) not found -  does not exist',
       "got view not found error (as expected)";
 };
+
+done_testing;
