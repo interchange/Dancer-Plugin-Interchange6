@@ -1,5 +1,21 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.120 Wed May 25 12:42:30 2016 CEST
+
+    [ENHANCEMENTS]
+
+    * Adjust to new 'combine' and 'extra' attributes (Peter Mottram).
+
+    * Rework load_saved_products method in Cart (Peter Mottram):
+      - load old carts and related products in a single query
+      - update/add Cart::Product objects in cart not just in database
+      - delete old CartProducts after manipulation of current cart is complete
+
+    [TESTS]
+
+    * Make disabled_cart_and_checkout.t RELEASE_TESTING only
+      (Peter Mottram, GH #55).
+
 0.111 Wed Mar 16 14:48:26 2016 CET
 
     [TESTS]
