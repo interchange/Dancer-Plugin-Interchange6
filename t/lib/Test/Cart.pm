@@ -125,7 +125,11 @@ test 'cart unit tests' => sub {
 
     is $cloned->name, '123412341234', "Cloned has the expected name";
     is $cloned->cart_products->count, 1, "Cloned has one product";
-    is $cloned->sessions_id, undef, "Cloned sessions id is undef";
+    ok $cloned->sessions_id, "Cloned has sessions";
+    $schema->resultset('Session')->find($cloned->sessions_id)->delete;
+    my $same_clone = $schema->resultset('Cart')->find($cloned->carts_id);
+    is $same_clone->carts_id, $same_clone->carts_id, "cart refetched";
+    is $same_clone->sessions_id, undef, "The session is gone, but the cart is here";
 
     # cleanup
     $schema->resultset('Cart')->delete;
@@ -382,7 +386,7 @@ test 'main cart tests' => sub {
         }
         elsif ($i == 3) {
             cmp_ok( $rec->name, 'eq', 'Cloned', "Cart 3 name is Cloned" );
-            is $rec->sessions_id, undef;
+            ok $rec->sessions_id, "Found a session id";
         }
         else {
             cmp_ok( $rec->name, 'eq', 'main', "Cart 4 name is main" );

@@ -545,7 +545,7 @@ sub clone {
     die "Can't clone a cart without a name" unless $name;
     my $cart = $self->dbic_cart;
     my %data = $cart->get_inflated_columns;
-    foreach my $delete (qw/carts_id name sessions_id/) {
+    foreach my $delete (qw/carts_id name/) {
         delete $data{$delete};
     }
     my @products = $cart->related_resultset('cart_products')->all;
