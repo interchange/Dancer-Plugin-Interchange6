@@ -117,6 +117,12 @@ test 'cart unit tests' => sub {
     cmp_ok $cart->product_get(0)->sku, 'eq', 'os28085-6',
       "and we have the expected product in the cart";
 
+    lives_ok {
+        for (1..3) {
+            $cart->clone('123412341234');
+        }
+    } "Multiple cloning is fine";
+
     my $cloned = $cart->clone('123412341234');
     diag "Cloned cart has id: " . $cloned->id;
 

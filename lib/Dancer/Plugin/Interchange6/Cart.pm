@@ -559,6 +559,13 @@ sub clone {
     }
     $data{name} = $name;
     $data{cart_products} = \@cloned_products;
+
+    if (defined $data{sessions_id}) {
+        schema($self->database)->resultset('Cart')->search({
+                                                            name        => $name,
+                                                            sessions_id => $data{sessions_id},
+                                                           })->delete;
+    }
     my $clone = schema( $self->database )->resultset('Cart')->create(\%data);
     $clone->discard_changes;
     return $clone;
