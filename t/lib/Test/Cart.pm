@@ -126,13 +126,18 @@ test 'cart unit tests' => sub {
     is $cloned->name, '123412341234', "Cloned has the expected name";
     is $cloned->cart_products->count, 1, "Cloned has one product";
     ok $cloned->sessions_id, "Cloned has sessions";
-    $schema->resultset('Session')->find($cloned->sessions_id)->delete;
+    my $session = $schema->resultset('Session')->find($cloned->sessions_id);
+    my %session_data = $session->get_inflated_columns;
+    $session->delete;
     my $same_clone = $schema->resultset('Cart')->find($cloned->carts_id);
     is $same_clone->carts_id, $same_clone->carts_id, "cart refetched";
     is $same_clone->sessions_id, undef, "The session is gone, but the cart is here";
-
+    diag $cloned->sessions_id;
+    # restore the session
+    $schema->resultset('Session')->create(\%session_data);
     # cleanup
     $schema->resultset('Cart')->delete;
+
 };
 
 test 'main cart tests' => sub {
