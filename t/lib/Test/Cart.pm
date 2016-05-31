@@ -117,6 +117,16 @@ test 'cart unit tests' => sub {
     cmp_ok $cart->product_get(0)->sku, 'eq', 'os28085-6',
       "and we have the expected product in the cart";
 
+    my $cloned = $cart->clone('123412341234');
+    diag "Cloned cart has id: " . $cloned->id;
+
+    cmp_ok $cloned->cart_products->first->sku, 'eq', 'os28085-6',
+      "we have the expected product in the cloned cart";
+
+    is $cloned->name, '123412341234', "Cloned has the expected name";
+    is $cloned->cart_products->count, 1, "Cloned has one product";
+    is $cloned->sessions_id, undef, "Cloned sessions id is undef";
+
     # cleanup
     $schema->resultset('Cart')->delete;
 };
@@ -338,6 +348,9 @@ test 'main cart tests' => sub {
     qr/Product sku not found in cart: NoSuchSkuInTheCart/,
       "Remove SKU that is not in the cart fails";
 
+    my $cloned;
+    lives_ok { $cloned = $cart->clone('Cloned') } "Cloned cart";
+
     # Seed
 
     lives_ok( sub { var ic6_carts => undef },
@@ -356,7 +369,7 @@ test 'main cart tests' => sub {
     ) or diag explain $log;
 
     $ret = $schema->resultset('Cart')->search( {}, { order_by => 'carts_id' } );
-    cmp_ok( $ret->count, '==', 3, "3 carts in the database" );
+    cmp_ok( $ret->count, '==', 4, "4 carts in the database" );
 
     my $i = 0;
     while ( my $rec = $ret->next ) {
@@ -367,8 +380,12 @@ test 'main cart tests' => sub {
         elsif ( $i == 2 ) {
             cmp_ok( $rec->name, 'eq', 'new', "Cart 2 name is new" );
         }
+        elsif ($i == 3) {
+            cmp_ok( $rec->name, 'eq', 'Cloned', "Cart 3 name is Cloned" );
+            is $rec->sessions_id, undef;
+        }
         else {
-            cmp_ok( $rec->name, 'eq', 'main', "Cart 3 name is main" );
+            cmp_ok( $rec->name, 'eq', 'main', "Cart 4 name is main" );
         }
     }
 
