@@ -1,5 +1,9 @@
 Revision history for Dancer::Plugin::Interchange6
 
+0.121 Sun Aug 7 16:39:43 2016 CEST
+
+    * Deprecate in favour of Dancer2::Plugin::Interchange6
+
 0.120 Wed May 25 12:42:30 2016 CEST
 
     [ENHANCEMENTS]
