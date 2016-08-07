@@ -25,6 +25,11 @@ Version 0.120
 
 our $VERSION = '0.120';
 
+=head1 DESCRIPTION
+
+This L<Dancer> plugin is now DEPRECATED since all new development has moved
+to the L<Dancer2> plugin L<Dancer2::Plugin::Interchange6>.
+
 =head1 REQUIREMENTS
 
 All Interchange6 Dancer applications need to use the L<Dancer::Session::DBIC>
@@ -457,6 +462,8 @@ by the Free Software Foundation; or the Artistic License.
 See http://dev.perl.org/licenses/ for more information.
 
 =head1 SEE ALSO
+
+L<Dancer2::Plugin::Interchange6>
 
 L<Interchange6>, L<Interchange6::Schema>
 

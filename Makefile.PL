@@ -6,7 +6,7 @@ WriteMakefile(
     NAME                => 'Dancer::Plugin::Interchange6',
     AUTHOR              => q{Stefan Hornburg (Racke) <racke@linuxia.de>},
     VERSION_FROM        => 'lib/Dancer/Plugin/Interchange6.pm',
-    ABSTRACT            => 'Dancer Plugin for Interchange6 Open Source Shop Machine',
+    ABSTRACT            => 'Dancer Plugin for Interchange6 Open Source Shop Machine (DEPRECATED)',
     ($ExtUtils::MakeMaker::VERSION >= 6.47
       ? ('LICENSE'=> 'perl')
       : ()),
@@ -44,6 +44,7 @@ WriteMakefile(
     clean               => { FILES => 'Dancer-Plugin-Interchange6-*' },
     test                => { TESTS => join( ' ', (glob( 't/*.t'), glob('t/*/*.t')))},
     META_MERGE        => {
+        x_deprecated => 1,
         resources => {
             repository  => 'https://github.com/interchange/Dancer-Plugin-Interchange6.git',
             bugtracker => 'https://github.com/interchange/Dancer-Plugin-Interchange6/issues',
