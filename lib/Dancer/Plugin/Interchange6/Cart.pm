@@ -533,6 +533,46 @@ around update => sub {
     }
 };
 
+=head2 clone($name)
+
+Clone the cart storing it in the database, using a new name. Return a
+Cart result object with the cloned cart.
+
+=cut
+
+sub clone {
+    my ($self, $name) = @_;
+    die "Can't clone a cart without a name" unless $name;
+    my $cart = $self->dbic_cart;
+    my %data = $cart->get_inflated_columns;
+    foreach my $delete (qw/carts_id name/) {
+        delete $data{$delete};
+    }
+    my @products = $cart->related_resultset('cart_products')->all;
+    my @cloned_products;
+    foreach my $p (@products) {
+        my %prod = $p->get_inflated_columns;
+        foreach my $delete(qw/cart_products_id carts_id/) {
+            delete $prod{$delete};
+        }
+        push @cloned_products, \%prod;
+    }
+    $data{name} = $name;
+    $data{cart_products} = \@cloned_products;
+
+    if (defined $data{sessions_id}) {
+        schema($self->database)->resultset('Cart')->search({
+                                                            name        => $name,
+                                                            sessions_id => $data{sessions_id},
+                                                           })->delete;
+    }
+    my $clone = schema( $self->database )->resultset('Cart')->create(\%data);
+    $clone->discard_changes;
+    return $clone;
+}
+
+
+
 =head1 HOOKS
 
 The following hooks are available:
